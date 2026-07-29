@@ -208,8 +208,8 @@ export const StorageService = {
         try {
             const raw = localStorage.getItem(SETTINGS_KEY);
             const defaults = {
-                systemTitle: "Wafer Driller BMD302W/BMD250WM Management",
-                version: "5.0",
+                systemTitle: "Laser Management System",
+                version: "1.0",
                 theme: "dark",
                 defaultRatedLife: 25000,
                 defaultWarningPercentage: 80,
@@ -218,11 +218,14 @@ export const StorageService = {
             };
             if (!raw) return defaults;
             const parsed = JSON.parse(raw);
+            if (parsed.systemTitle === "Wafer Driller BMD302W/BMD250WM Management") {
+                parsed.systemTitle = "Laser Management System";
+            }
             return { ...defaults, ...parsed };
         } catch (err) {
             return {
-                systemTitle: "Wafer Driller BMD302W/BMD250WM Management",
-                version: "5.0",
+                systemTitle: "Laser Management System",
+                version: "1.0",
                 theme: "dark",
                 engineerPassword: "1234",
                 accessMode: "ENGINEER"

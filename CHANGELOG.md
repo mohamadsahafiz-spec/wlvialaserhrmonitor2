@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-07-29
 
 ### Added
+- **UI/UX Refinement Pass**:
+  - Removed unused right-side whitespace and expanded container width for widescreen displays (1920×1080 and above).
+  - Prominent Fleet Overview KPI statistics grid with expanded cards and bold typography hierarchy.
+  - Professional top navigation bar with SVG icons replacing hyperlink-style navigation.
+  - Standardized machine card dimensions (equal width and height across fleet grid).
+  - Expanded mini health track width for better visual clarity.
+  - Improved search and filter toolbar alignment and spacing.
+  - Updated system branding and titles from legacy names to **Laser Management System**.
 - **Full Software Audit & Verification**: Complete architectural audit covering HTML, CSS, JavaScript, ES6 Modules, Navigation, Calculations, Storage, Performance, Responsive Layout, Accessibility, Dark/Light Themes, Animations, Memory Usage, and ID Uniqueness.
 - **Dedicated Documentation Suite**: Added `README.md`, `PROJECT_RULES.md`, and `CHANGELOG.md`.
 - **Engineer & Customer Access Modes**: Integrated password-protected Engineer Mode (`default: 1234`) restricting modal edits, machine additions, recalibration, and deletion to authorized personnel.

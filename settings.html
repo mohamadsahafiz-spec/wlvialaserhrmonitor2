@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wafer Driller BMD302W/BMD250WM Management - Settings</title>
+    <title>Laser Management System - Settings</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
 <body>
 
     <!-- =====================================================
-         HEADER / SCADA TITLE BAR
+         HEADER / NAVIGATION TITLE BAR
     ===================================================== -->
     <header class="app-header">
         <div class="header-content">
@@ -27,14 +27,20 @@
                     <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                 </div>
                 <div>
-                    <h1>Wafer Driller BMD302W/BMD250WM Management</h1>
-                    <div class="subtitle">Laser Lifetime & Hour Recalibration Engine • Settings & System Config</div>
+                    <h1>Laser Management System</h1>
+                    <div class="subtitle">Laser Lifetime & Hour Recalibration Engine • System Settings</div>
                 </div>
             </div>
 
             <nav class="nav-links">
-                <a href="index.html" class="nav-item">Fleet Overview</a>
-                <a href="settings.html" class="nav-item active">Settings</a>
+                <a href="index.html" class="nav-item">
+                    <svg class="icon nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    Fleet Overview
+                </a>
+                <a href="settings.html" class="nav-item active">
+                    <svg class="icon nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    Settings
+                </a>
             </nav>
 
             <div class="header-controls">
@@ -57,13 +63,13 @@
         <section id="view-settings" class="settings-view">
             <div class="glass-panel panel-section">
                 <div class="panel-header">
-                    <h2>SCADA Engine Configuration</h2>
-                    <span class="badge badge-info">v5.0 Modular Architecture</span>
+                    <h2>System Engine Configuration</h2>
+                    <span class="badge badge-info">v1.0 Modular Architecture</span>
                 </div>
                 <div class="form-grid" style="margin-top: 16px;">
                     <div class="form-group">
                         <label>Application Title</label>
-                        <input type="text" id="cfg-app-title" class="input-control" value="Wafer Driller BMD302W/BMD250WM Management">
+                        <input type="text" id="cfg-app-title" class="input-control" value="Laser Management System">
                     </div>
                     <div class="form-group">
                         <label>Default Rated Laser Life (hrs)</label>
@@ -250,7 +256,7 @@
                         UI.showModal(modeModalOverlay);
                         return;
                     }
-                    if (confirm('Restore default SCADA settings?')) {
+                    if (confirm('Restore default system settings?')) {
                         localStorage.removeItem('wafer_driller_settings_v5');
                         location.reload();
                     }

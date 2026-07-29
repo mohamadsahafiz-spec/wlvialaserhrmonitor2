@@ -1,8 +1,8 @@
 {
-  "systemTitle": "Wafer Driller BMD302W/BMD250WM Management",
-  "version": "5.0",
+  "systemTitle": "Laser Management System",
+  "version": "1.0",
   "theme": "dark",
-  "scadaStatus": "Active",
+  "systemStatus": "Active",
   "defaultRatedLife": 25000,
   "defaultWarningPercentage": 80,
   "recalibrationIntervalDays": 30,
