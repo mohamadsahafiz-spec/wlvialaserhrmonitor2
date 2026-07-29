@@ -33,7 +33,12 @@ The **Laser Management System Version 1.0** provides semiconductor process engin
 4. **Access Control & Persistence (`storage.js` & `ui.js`)**:
    - **Engineer Mode vs Customer Mode**: Toggleable access modes protected by engineer password authentication.
    - **Persistence**: Machine records, system parameters, and maintenance histories are persisted in browser `localStorage` with fallback seed generation.
-   - **Backup & Reporting**: Export reports to CSV/JSON format, restore fleet backups, and generate print-ready SCADA summaries.
+   - **Backup & Reporting**: Export reports to CSV/JSON format, restore fleet backups, and generate print-ready summaries.
+
+5. **Cross-Platform PWA Support (`manifest.json` & Responsive CSS)**:
+   - Full Progressive Web App (PWA) manifest support for installation on Android, iOS Web Clips, macOS, Windows, and Linux.
+   - Touch-optimized 44px minimum touch targets and Apple iOS notch safe-area (`viewport-fit=cover`) integration.
+   - Responsive multi-device layout scaling across mobile phones, tablets, laptops, MacBooks, and widescreen PC displays.
 
 ---
 
@@ -41,15 +46,19 @@ The **Laser Management System Version 1.0** provides semiconductor process engin
 
 ```
 LaserManagementSystem/
-├── index.html              # Fleet Overview & SCADA Dashboard
+├── index.html              # Fleet Overview Dashboard
 ├── machine.html            # Machine Profile, Gauges & Audit History
-├── settings.html           # SCADA Configuration & Fleet Backup
+├── settings.html           # System Configuration & Fleet Backup
+├── manifest.json           # Web App Manifest (PWA)
+├── icon.svg                # Vector SVG App Icon
+├── icon-192.svg            # 192x192 PWA Icon
+├── icon-512.svg            # 512x512 PWA Icon
 ├── css/
 │   ├── style.css           # Base Reset, Variables, Glassmorphism & Layout
-│   ├── dashboard.css       # SCADA Panels, Statistics Grid & Controls
+│   ├── dashboard.css       # System Panels, Statistics Grid & Controls
 │   ├── cards.css           # Fleet Cards, Badges & Mini-Gauges
 │   ├── animations.css      # Status LED Glows, Blinks, Modals & Toast System
-│   └── responsive.css      # Responsive Breakpoints & Print Stylesheet
+│   └── responsive.css      # Multi-Device (Mobile, Tablet, Laptop, PC, iOS, Android) & Print CSS
 ├── js/
 │   ├── app.js              # Main Controller & Route Initializer
 │   ├── dashboard.js        # Fleet Overview & Multi-Criteria Filtering

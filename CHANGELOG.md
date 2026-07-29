@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-07-29
 
 ### Added
+- **Web App Manifest & Cross-Platform Support**:
+  - Created `/manifest.json` PWA configuration for Android, Apple iOS Web Clips, macOS, Windows, and Linux.
+  - Added high-resolution vector SVG app icons (`icon.svg`, `icon-192.svg`, `icon-512.svg`).
+  - Added Apple mobile Web App meta tags (`apple-mobile-web-app-capable`, `apple-touch-icon`, `theme-color`).
+  - Implemented iOS safe-area inset integration (`viewport-fit=cover`) and 44px touch target sizes for mobile screens.
 - **UI/UX Refinement Pass**:
   - Removed unused right-side whitespace and expanded container width for widescreen displays (1920×1080 and above).
   - Prominent Fleet Overview KPI statistics grid with expanded cards and bold typography hierarchy.
