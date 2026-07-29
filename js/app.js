@@ -88,6 +88,7 @@ function initDOM() {
         btnTheme: document.getElementById('btn-theme'),
 
         // Recalibration Modal
+        btnCloseMachModal: document.getElementById('btn-close-mach-modal'),
         btnOpenRecalibrate: document.getElementById('btn-open-recalibrate'),
         recalOverlay: document.getElementById('recalibrate-modal-overlay'),
         btnCloseRecalModal: document.getElementById('btn-close-recal-modal'),
@@ -151,8 +152,16 @@ let pendingEngineerAction = null;
 function updateModeBadgeUI() {
     const isEng = AppState.settings.accessMode === 'ENGINEER';
     if (DOM.btnToggleMode) {
-        DOM.btnToggleMode.className = `badge-btn ${isEng ? 'badge-engineer' : 'badge-customer'}`;
-        DOM.btnToggleMode.innerHTML = `<span class="mode-icon">${isEng ? '🔒' : '👁️'}</span> <span id="mode-label">${isEng ? 'ENGINEER MODE' : 'CUSTOMER MODE'}</span>`;
+        DOM.btnToggleMode.className = `user-profile-btn ${isEng ? 'user-eng' : 'user-cust'}`;
+        DOM.btnToggleMode.title = `Current User: ${isEng ? 'Engineer Mode' : 'Customer Mode'}. Click to switch.`;
+        DOM.btnToggleMode.innerHTML = `
+            <div class="user-avatar ${isEng ? 'avatar-engineer' : 'avatar-customer'}">${isEng ? 'E' : 'C'}</div>
+            <div class="user-info">
+                <span id="mode-label" class="user-name">${isEng ? 'Engineer Admin' : 'Customer View'}</span>
+                <span class="user-role-badge ${isEng ? 'role-eng' : 'role-cust'}">${isEng ? 'Full Access' : 'Read Only'}</span>
+            </div>
+            <svg class="icon user-dropdown-icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        `;
     }
 }
 
@@ -217,7 +226,10 @@ async function initApp() {
 }
 
 function showFleetView() {
-    if (DOM.viewSingle) DOM.viewSingle.classList.add('hidden');
+    if (DOM.viewSingle) {
+        DOM.viewSingle.classList.add('hidden');
+        DOM.viewSingle.classList.remove('as-modal');
+    }
     if (DOM.viewSettings) DOM.viewSettings.classList.add('hidden');
     if (DOM.viewFleet) DOM.viewFleet.classList.remove('hidden');
 
@@ -281,9 +293,16 @@ function showMachineDetail(id) {
     AppState.currentMachineId = id;
     setQueryParam('id', id);
 
-    if (DOM.viewFleet) DOM.viewFleet.classList.add('hidden');
+    if (DOM.viewFleet) {
+        DOM.viewFleet.classList.remove('hidden');
+        if (DOM.viewSingle) {
+            DOM.viewSingle.classList.add('as-modal');
+            DOM.viewSingle.classList.remove('hidden');
+        }
+    } else {
+        if (DOM.viewSingle) DOM.viewSingle.classList.remove('hidden');
+    }
     if (DOM.viewSettings) DOM.viewSettings.classList.add('hidden');
-    if (DOM.viewSingle) DOM.viewSingle.classList.remove('hidden');
 
     const machine = AppState.machines.find(m => m.id === id);
     if (!machine) return;
@@ -423,6 +442,85 @@ function setupEventListeners() {
             showFleetView();
         }
     });
+
+    if (DOM.btnCloseMachModal) DOM.btnCloseMachModal.addEventListener('click', () => {
+        if (window.location.pathname.includes('machine.html')) {
+            window.location.href = 'index.html';
+        } else {
+            showFleetView();
+        }
+    });
+
+    // Modal Tabs Switching Listener
+    const tabBtns = document.querySelectorAll('.mach-tab-btn');
+    const tabPanes = document.querySelectorAll('.mach-tab-pane');
+
+    function switchTab(tabId) {
+        tabBtns.forEach(b => {
+            if (b.getAttribute('data-tab') === tabId) {
+                b.classList.add('active');
+            } else {
+                b.classList.remove('active');
+            }
+        });
+        tabPanes.forEach(pane => {
+            if (pane.id === `tab-${tabId}`) {
+                pane.classList.add('active');
+            } else {
+                pane.classList.remove('active');
+            }
+        });
+    }
+
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTab = btn.getAttribute('data-tab');
+            if (targetTab === 'config' && AppState.settings.accessMode !== 'ENGINEER') {
+                requireEngineerMode(() => {
+                    switchTab(targetTab);
+                });
+                return;
+            }
+            switchTab(targetTab);
+        });
+    });
+
+    // ESC Key to Close Modal Workspace
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && DOM.viewSingle && !DOM.viewSingle.classList.contains('hidden')) {
+            showFleetView();
+        }
+    });
+
+    // Backdrop Click Outside to Close Modal Workspace
+    if (DOM.viewSingle) {
+        DOM.viewSingle.addEventListener('click', (e) => {
+            if (DOM.viewSingle.classList.contains('as-modal') && e.target === DOM.viewSingle) {
+                showFleetView();
+            }
+        });
+    }
+
+    // Secondary Action Triggers
+    const btnOpenRecal2 = document.getElementById('btn-open-recalibrate-2');
+    if (btnOpenRecal2) {
+        btnOpenRecal2.addEventListener('click', () => {
+            if (DOM.btnOpenRecalibrate) DOM.btnOpenRecalibrate.click();
+        });
+    }
+
+    const btnEditConfig = document.getElementById('btn-edit-config-trigger');
+    if (btnEditConfig) {
+        btnEditConfig.addEventListener('click', () => {
+            if (AppState.settings.accessMode !== 'ENGINEER') {
+                requireEngineerMode(() => {
+                    switchTab('config');
+                });
+            } else {
+                switchTab('config');
+            }
+        });
+    }
 
     if (DOM.btnSaveMachine) DOM.btnSaveMachine.addEventListener('click', () => {
         requireEngineerMode(() => {

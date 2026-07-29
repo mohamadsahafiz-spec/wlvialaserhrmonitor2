@@ -166,34 +166,179 @@ body::after {
     display: flex;
     align-items: center;
     gap: 12px;
-    flex-wrap: wrap;
 }
 
-.date-picker-wrap {
+/* USER PROFILE BUTTON */
+.user-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 14px 5px 6px;
+    border-radius: 30px;
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    cursor: pointer;
+    transition: var(--transition);
+    color: var(--text);
+    text-align: left;
+}
+
+.user-profile-btn:hover {
+    border-color: var(--glass-border-highlight);
+    background: var(--glass-bg-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+
+.user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.avatar-engineer {
+    background: rgba(56, 189, 248, 0.2);
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+}
+
+.avatar-customer {
+    background: rgba(251, 146, 60, 0.2);
+    color: #fb923c;
+    border: 1.5px solid #fb923c;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.1;
+}
+
+.user-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.user-role-badge {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 2px;
+}
+
+.role-eng {
+    color: var(--primary);
+}
+
+.role-cust {
+    color: #fb923c;
+}
+
+.user-dropdown-icon {
+    width: 14px;
+    height: 14px;
+    stroke: var(--muted);
+    stroke-width: 2;
+    fill: none;
+    margin-left: 2px;
+}
+
+/* SIMULATED DATE CHIP (TOOLBAR) */
+.sim-date-chip {
+    display: inline-flex;
     align-items: center;
     gap: 8px;
     background: var(--input-bg);
     border: 1px solid var(--glass-border);
-    padding: 6px 12px;
-    border-radius: 10px;
-    height: 40px;
+    padding: 6px 14px;
+    border-radius: 12px;
+    height: 42px;
+    transition: var(--transition);
 }
 
-.date-picker-wrap label {
-    font-size: 12px;
-    font-weight: 600;
+.sim-date-chip:focus-within, .sim-date-chip:hover {
+    border-color: var(--glass-border-highlight);
+    background: var(--glass-bg-hover);
+}
+
+.sim-chip-icon {
+    display: flex;
+    align-items: center;
+    color: var(--primary);
+}
+
+.sim-chip-icon .icon {
+    width: 16px;
+    height: 16px;
+}
+
+.sim-chip-body {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sim-chip-label {
+    font-size: 11px;
+    font-weight: 700;
     color: var(--muted);
     white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.date-picker-wrap input {
+.sim-chip-input {
     background: transparent;
     border: none;
     color: var(--text);
     font-size: 13px;
     font-weight: 600;
     outline: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* FLEET ACTIONS FOOTER BAR */
+.fleet-footer-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    margin-top: 24px;
+    border-radius: 16px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.fleet-footer-bar .footer-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.fleet-footer-bar .footer-info .icon {
+    width: 18px;
+    height: 18px;
+    stroke: var(--primary);
+}
+
+.fleet-footer-bar .footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .nav-links {

@@ -52,21 +52,13 @@
             </nav>
 
             <div class="header-controls">
-                <button id="btn-toggle-mode" class="badge-btn badge-engineer" title="Click to switch access mode">
-                    <span class="mode-icon">🔒</span>
-                    <span id="mode-label">ENGINEER MODE</span>
-                </button>
-                <div class="date-picker-wrap">
-                    <label for="todayDate">Simulated Today:</label>
-                    <input type="date" id="todayDate" class="input-control">
-                </div>
-                <button id="btn-export-csv" class="btn btn-secondary" title="Export CSV Report">
-                    <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    Export CSV
-                </button>
-                <button id="btn-print" class="btn btn-secondary" title="Print Report">
-                    <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
-                    Print
+                <button id="btn-toggle-mode" class="user-profile-btn" title="Click to switch access mode">
+                    <div class="user-avatar avatar-engineer">E</div>
+                    <div class="user-info">
+                        <span id="mode-label" class="user-name">Engineer Admin</span>
+                        <span class="user-role-badge role-eng">Full Access</span>
+                    </div>
+                    <svg class="icon user-dropdown-icon" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
                 </button>
                 <button id="btn-theme" class="btn-icon" title="Toggle Light/Dark Theme">
                     <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
@@ -117,6 +109,16 @@
             </div>
 
             <div class="toolbar glass-panel">
+                <div class="sim-date-chip" title="Set simulated current evaluation date">
+                    <div class="sim-chip-icon">
+                        <svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    </div>
+                    <div class="sim-chip-body">
+                        <label for="todayDate" class="sim-chip-label">Simulated Date</label>
+                        <input type="date" id="todayDate" class="sim-chip-input">
+                    </div>
+                </div>
+
                 <div class="search-box">
                     <svg class="icon search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     <input type="text" id="filter-search" class="input-control" placeholder="Search machine no, serial, or model...">
@@ -162,6 +164,24 @@
             <!-- Fleet Machine Grid -->
             <div id="fleet-grid" class="fleet-grid">
                 <!-- Dynamically populated by JS -->
+            </div>
+
+            <!-- Bottom Action Footer Bar for Reports & Export -->
+            <div class="fleet-footer-bar glass-panel">
+                <div class="footer-info">
+                    <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                    <span>Laser Lifetime & Hour Recalibration Engine • Fleet Overview Reports</span>
+                </div>
+                <div class="footer-actions">
+                    <button id="btn-export-csv" class="btn btn-secondary" title="Export CSV Report">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Export CSV
+                    </button>
+                    <button id="btn-print" class="btn btn-secondary" title="Print Report">
+                        <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                        Print Report
+                    </button>
+                </div>
             </div>
         </section>
 

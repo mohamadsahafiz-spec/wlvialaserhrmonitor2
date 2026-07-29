@@ -14,6 +14,39 @@ export const MachineController = {
 
         const metrics = LaserEngine.calculateMachineMetrics(machine, evalTime);
 
+        // Header Elements
+        const headerNum = document.getElementById('mach-header-num');
+        const headerName = document.getElementById('mach-header-name');
+        const headerModel = document.getElementById('mach-header-model');
+        const headerStatus = document.getElementById('mach-header-status');
+        if (headerNum) headerNum.textContent = machine.machineNo;
+        if (headerName) headerName.textContent = machine.machineName || machine.machineNo;
+        if (headerModel) headerModel.textContent = `${machine.model} • SN: ${machine.serialNo || 'N/A'}`;
+        if (headerStatus) {
+            const statusClass = metrics.status === 'SAFE' ? 'color-safe' : (metrics.status === 'WARNING' ? 'color-warning' : 'color-alarm');
+            const bgClass = metrics.status === 'SAFE' ? 'bg-safe' : (metrics.status === 'WARNING' ? 'bg-warning' : 'bg-alarm');
+            headerStatus.className = `mc-status-badge ${statusClass}`;
+            headerStatus.innerHTML = `<div class="mc-led ${bgClass} led-solid"></div> ${metrics.status}`;
+        }
+
+        // Read-only Machine Profile Cards
+        const infoNum = document.getElementById('info-mach-no');
+        const infoModel = document.getElementById('info-model');
+        const infoSerial = document.getElementById('info-serial');
+        const infoDept = document.getElementById('info-dept');
+        const infoRated = document.getElementById('info-rated');
+        const infoBaseDate = document.getElementById('info-base-date');
+        if (infoNum) infoNum.textContent = machine.machineNo;
+        if (infoModel) infoModel.textContent = machine.model;
+        if (infoSerial) infoSerial.textContent = machine.serialNo;
+        if (infoDept) infoDept.textContent = machine.department;
+        if (infoRated) infoRated.textContent = `${(machine.ratedLife || 25000).toLocaleString()} hrs`;
+        if (infoBaseDate) infoBaseDate.textContent = machine.baseTimestamp ? new Date(machine.baseTimestamp).toLocaleDateString() : 'N/A';
+
+        // EOL Date Card
+        const machEol = document.getElementById('mach-eol-date');
+        if (machEol) machEol.textContent = metrics.eolDate || 'N/A';
+
         // Confidence Center
         if (DOM.confEstimatedHour) DOM.confEstimatedHour.textContent = metrics.currentHour.toLocaleString() + ' hrs';
         if (DOM.confAccuracy) {
@@ -30,6 +63,28 @@ export const MachineController = {
             DOM.confStatus.textContent = metrics.recalRecommendation.status;
             DOM.confStatus.style.color = metrics.recalRecommendation.color;
         }
+
+        // Tab duplicate elements
+        const healthTabPercent = document.getElementById('health-tab-percent');
+        const confAccuracyTab = document.getElementById('conf-accuracy-tab');
+        const confAccuracyCalib = document.getElementById('conf-accuracy-calib');
+        const confLastRecal2 = document.getElementById('conf-last-recal-2');
+        const confNextRecal2 = document.getElementById('conf-next-recal-2');
+        if (healthTabPercent) healthTabPercent.textContent = Math.round(metrics.healthPercent) + '%';
+        if (confAccuracyTab) {
+            confAccuracyTab.textContent = metrics.accuracy.label;
+            confAccuracyTab.style.color = metrics.accuracy.color;
+        }
+        if (confAccuracyCalib) {
+            confAccuracyCalib.textContent = metrics.accuracy.label;
+            confAccuracyCalib.style.color = metrics.accuracy.color;
+        }
+        if (confLastRecal2) {
+            confLastRecal2.textContent = metrics.lastRecalibrationDate ?
+                new Date(metrics.lastRecalibrationDate).toLocaleDateString() + ' ' +
+                new Date(metrics.lastRecalibrationDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
+        }
+        if (confNextRecal2) confNextRecal2.textContent = metrics.nextRecalDate;
 
         // Metrics
         if (DOM.currentHour) DOM.currentHour.textContent = metrics.currentHour.toLocaleString() + " hrs";
