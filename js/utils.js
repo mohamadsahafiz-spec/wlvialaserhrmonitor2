@@ -3,11 +3,11 @@
    ===================================================== */
 
 /**
- * Format hours to localized string with comma separators.
+ * Format hours to string without comma separators.
  */
 export function formatHours(val) {
     const num = Number(val) || 0;
-    return num.toLocaleString();
+    return String(Math.round(num));
 }
 
 /**

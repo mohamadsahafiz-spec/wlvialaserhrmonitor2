@@ -10,7 +10,7 @@ export const UI = {
     toggleTheme() {
         const isLight = document.documentElement.getAttribute('data-theme') === 'light';
         const nextTheme = isLight ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', nextTheme);
+        this.applyTheme(nextTheme);
         return nextTheme;
     },
 
@@ -20,6 +20,21 @@ export const UI = {
     applyTheme(theme) {
         if (theme) {
             document.documentElement.setAttribute('data-theme', theme);
+        }
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+        const btnTheme = document.getElementById('btn-theme');
+        if (btnTheme) {
+            const sun = btnTheme.querySelector('.icon-sun');
+            const moon = btnTheme.querySelector('.icon-moon');
+            if (currentTheme === 'light') {
+                if (sun) sun.classList.add('hidden');
+                if (moon) moon.classList.remove('hidden');
+                btnTheme.title = 'Switch to Dark Mode';
+            } else {
+                if (sun) sun.classList.remove('hidden');
+                if (moon) moon.classList.add('hidden');
+                btnTheme.title = 'Switch to Light Mode';
+            }
         }
     },
 
@@ -112,8 +127,28 @@ export const UI = {
                 }
             }, 300);
         }, duration);
+    },
+
+    /**
+     * Animates a number from 0 to the target value.
+     */
+    animateValue(obj, start, end, duration, formatStr = '') {
+        if (!obj) return;
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const easeOut = progress * (2 - progress);
+            const current = Math.floor(easeOut * (end - start) + start);
+            obj.textContent = current + formatStr;
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            } else {
+                obj.textContent = end + formatStr;
+            }
+        };
+        window.requestAnimationFrame(step);
     }
 };
 
 window.UI = UI;
-

@@ -39,7 +39,7 @@ export const DashboardController = {
         if (warnEl) warnEl.textContent = warnCount;
         if (alarmEl) alarmEl.textContent = alarmCount;
         if (avgHealthEl) avgHealthEl.textContent = `${Math.round(avgHealth * 10) / 10}%`;
-        if (totalHrsEl) totalHrsEl.textContent = `${Math.round(sumHours).toLocaleString()} hrs`;
+        if (totalHrsEl) totalHrsEl.textContent = `${Math.round(sumHours)} hrs`;
     },
 
     /**
@@ -115,9 +115,9 @@ export const DashboardController = {
                     const daysVal = card.querySelector('.mc-stat-val-days');
                     const healthFill = card.querySelector('.mini-health-fill');
                     const healthText = card.querySelector('.mc-health-text');
-                    if (currentVal) currentVal.textContent = `${metrics.currentHour.toLocaleString()} hrs`;
+                    if (currentVal) currentVal.textContent = `${metrics.currentHour} hrs`;
                     if (remainVal) {
-                        const formatHrs = Math.abs(metrics.remainingTotal).toLocaleString();
+                        const formatHrs = Math.abs(metrics.remainingTotal);
                         remainVal.textContent = metrics.remainingTotal < 0 ? `-${formatHrs} hrs` : `${formatHrs} hrs`;
                     }
                     if (daysVal) {
@@ -152,13 +152,13 @@ export const DashboardController = {
             const card = document.createElement('div');
             card.className = 'machine-card glass-panel';
             card.setAttribute('data-id', machine.id);
-            card.onclick = () => {
+            card.onclick = (e) => {
                 if (typeof onSelectMachine === 'function') {
-                    onSelectMachine(machine.id);
+                    onSelectMachine(machine.id, e.currentTarget);
                 }
             };
 
-            const formatHrs = Math.abs(metrics.remainingTotal).toLocaleString();
+            const formatHrs = Math.abs(metrics.remainingTotal);
             const remainText = metrics.remainingTotal < 0 ? `-${formatHrs} hrs` : `${formatHrs} hrs`;
             const recalDateStr = metrics.lastRecalibrationDate ? new Date(metrics.lastRecalibrationDate).toLocaleDateString() : 'N/A';
             const remDaysText = metrics.remainingDaysInfo.formattedText;
@@ -180,7 +180,7 @@ export const DashboardController = {
                 <div class="mc-stats">
                     <div class="mc-stat-item">
                         <span class="mc-stat-label">Current Laser Hr</span>
-                        <span class="mc-stat-val mc-stat-val-current">${metrics.currentHour.toLocaleString()} hrs</span>
+                        <span class="mc-stat-val mc-stat-val-current">${metrics.currentHour} hrs</span>
                     </div>
                     <div class="mc-stat-item">
                         <span class="mc-stat-label">Remaining Hr</span>

@@ -4,6 +4,7 @@
 import { LaserEngine } from './laserEngine.js';
 import { ChartRenderer } from './charts.js';
 import { StorageService } from './storage.js';
+import { UI } from './ui.js';
 
 export const MachineController = {
     /**
@@ -40,7 +41,7 @@ export const MachineController = {
         if (infoModel) infoModel.textContent = machine.model;
         if (infoSerial) infoSerial.textContent = machine.serialNo;
         if (infoDept) infoDept.textContent = machine.department;
-        if (infoRated) infoRated.textContent = `${(machine.ratedLife || 25000).toLocaleString()} hrs`;
+        if (infoRated) infoRated.textContent = `${machine.ratedLife || 25000} hrs`;
         if (infoBaseDate) infoBaseDate.textContent = machine.baseTimestamp ? new Date(machine.baseTimestamp).toLocaleDateString() : 'N/A';
 
         // EOL Date Card
@@ -48,7 +49,7 @@ export const MachineController = {
         if (machEol) machEol.textContent = metrics.eolDate || 'N/A';
 
         // Confidence Center
-        if (DOM.confEstimatedHour) DOM.confEstimatedHour.textContent = metrics.currentHour.toLocaleString() + ' hrs';
+        if (DOM.confEstimatedHour) UI.animateValue(DOM.confEstimatedHour, 0, metrics.currentHour, 800, " hrs");
         if (DOM.confAccuracy) {
             DOM.confAccuracy.textContent = metrics.accuracy.label;
             DOM.confAccuracy.style.color = metrics.accuracy.color;
@@ -70,7 +71,7 @@ export const MachineController = {
         const confAccuracyCalib = document.getElementById('conf-accuracy-calib');
         const confLastRecal2 = document.getElementById('conf-last-recal-2');
         const confNextRecal2 = document.getElementById('conf-next-recal-2');
-        if (healthTabPercent) healthTabPercent.textContent = Math.round(metrics.healthPercent) + '%';
+        if (healthTabPercent) UI.animateValue(healthTabPercent, 0, Math.round(metrics.healthPercent), 800, "%");
         if (confAccuracyTab) {
             confAccuracyTab.textContent = metrics.accuracy.label;
             confAccuracyTab.style.color = metrics.accuracy.color;
@@ -87,16 +88,16 @@ export const MachineController = {
         if (confNextRecal2) confNextRecal2.textContent = metrics.nextRecalDate;
 
         // Metrics
-        if (DOM.currentHour) DOM.currentHour.textContent = metrics.currentHour.toLocaleString() + " hrs";
+        if (DOM.currentHour) UI.animateValue(DOM.currentHour, 0, metrics.currentHour, 800, " hrs");
         if (DOM.currentAge) DOM.currentAge.textContent = metrics.age.formattedText;
-        if (DOM.runningHour) DOM.runningHour.textContent = metrics.runningHours.toLocaleString() + " hrs";
+        if (DOM.runningHour) UI.animateValue(DOM.runningHour, 0, metrics.runningHours, 800, " hrs");
         if (DOM.runningDay) DOM.runningDay.textContent = metrics.daysPassed + " Days";
 
         this.updateRemainingCardUI(metrics, DOM);
         this.updateStatusCardUI(metrics.status, DOM);
 
         if (DOM.progressBar) ChartRenderer.updateProgressBar(DOM.progressBar, metrics.healthPercent);
-        if (DOM.healthPercent) DOM.healthPercent.textContent = Math.round(metrics.healthPercent) + "%";
+        if (DOM.healthPercent) UI.animateValue(DOM.healthPercent, 0, Math.round(metrics.healthPercent), 800, "%");
 
         if (!silent) {
             this.updateLegendsAndScales(machine, DOM);
@@ -139,9 +140,9 @@ export const MachineController = {
             }
         }
 
-        const formatHours = (remainingTotal < 0 ? "-" : "") + Math.abs(remainingTotal).toLocaleString() + " hrs";
-        DOM.remainingHour.textContent = formatHours;
-        if (DOM.remainingDay) DOM.remainingDay.textContent = remInfo.daysVal.toLocaleString() + " " + remInfo.statusMsg;
+        const formatHours = (remainingTotal < 0 ? "-" : "") + Math.abs(remainingTotal) + " hrs";
+        UI.animateValue(DOM.remainingHour, 0, Math.abs(metrics.remainingTotal), 800, " hrs");
+        if (DOM.remainingDay) DOM.remainingDay.textContent = remInfo.daysVal + " " + remInfo.statusMsg;
     },
 
     updateStatusCardUI(status, DOM) {
@@ -164,46 +165,43 @@ export const MachineController = {
         }
     },
 
-    updateLegendsAndScales(machine, DOM) {
-        const warn = machine.warningLife || Math.floor((machine.ratedLife || 25000) * 0.8);
-        const rated = machine.ratedLife || 25000;
-        if (DOM.legendSafe) DOM.legendSafe.textContent = `0 – ${(warn - 1).toLocaleString()} hrs`;
-        if (DOM.legendWarning) DOM.legendWarning.textContent = `${warn.toLocaleString()} – ${(rated - 1).toLocaleString()} hrs`;
-        if (DOM.legendAlarm) DOM.legendAlarm.textContent = `${rated.toLocaleString()}+ hrs`;
-        if (DOM.scaleWarn) DOM.scaleWarn.textContent = `${warn.toLocaleString()} hrs`;
-        if (DOM.scaleAlarm) DOM.scaleAlarm.textContent = `${rated.toLocaleString()} hrs`;
-    },
-
-    renderMaintenanceLog(machine, tbodyElement) {
-        if (!tbodyElement) return;
-        tbodyElement.innerHTML = '';
+    renderMaintenanceLog(machine, containerElement) {
+        if (!containerElement) return;
+        containerElement.innerHTML = '';
         if (!machine.maintenanceHistory || machine.maintenanceHistory.length === 0) {
-            tbodyElement.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--muted); padding: 24px;">No maintenance records found. Click "+ Add Record" to start.</td></tr>`;
+            containerElement.innerHTML = `<div style="text-align:center; color:var(--muted); padding: 24px;">No maintenance records found. Click "+ Add Record" to start.</div>`;
             return;
         }
-
-        machine.maintenanceHistory.forEach((log, index) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td contenteditable="true" class="editable-cell" data-field="date" data-index="${index}">${log.date}</td>
-                <td contenteditable="true" class="editable-cell font-semibold" data-field="engineer" data-index="${index}">${log.engineer}</td>
-                <td contenteditable="true" class="editable-cell" data-field="action" data-index="${index}">${log.action}</td>
-                <td contenteditable="true" class="editable-cell text-muted" data-field="notes" data-index="${index}">${log.notes}</td>
-                <td>
-                    <div style="display:flex; gap:12px; align-items:center;">
-                        <div class="photo-placeholder" title="View Attachment">
-                            <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--muted);"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        
+        // Show max 10 records
+        const records = machine.maintenanceHistory.slice(0, 10);
+        
+        records.forEach((log, index) => {
+            const item = document.createElement('div');
+            item.className = 'timeline-item';
+            item.innerHTML = `
+                <div class="timeline-marker">
+                    <div class="timeline-dot"></div>
+                    ${index !== records.length - 1 ? '<div class="timeline-line"></div>' : ''}
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-header">
+                        <div class="timeline-meta">
+                            <span class="timeline-date" contenteditable="true" data-field="date" data-index="${index}">${log.date}</span>
+                            <span class="timeline-engineer" contenteditable="true" data-field="engineer" data-index="${index}">${log.engineer}</span>
                         </div>
                         <button class="btn-icon-danger btn-delete-record" data-index="${index}" title="Delete Record">
-                            <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            <svg class="icon" viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                     </div>
-                </td>
+                    <div class="timeline-action" contenteditable="true" data-field="action" data-index="${index}">${log.action}</div>
+                    <div class="timeline-notes" contenteditable="true" data-field="notes" data-index="${index}">${log.notes}</div>
+                </div>
             `;
-            tbodyElement.appendChild(tr);
+            containerElement.appendChild(item);
         });
 
-        const editableCells = tbodyElement.querySelectorAll('.editable-cell');
+        const editableCells = containerElement.querySelectorAll('[contenteditable="true"]');
         editableCells.forEach(cell => {
             cell.addEventListener('blur', (e) => {
                 const idx = e.target.getAttribute('data-index');
@@ -219,17 +217,29 @@ export const MachineController = {
             });
         });
 
-        const deleteBtns = tbodyElement.querySelectorAll('.btn-delete-record');
-        deleteBtns.forEach(btn => {
+        const delBtns = containerElement.querySelectorAll('.btn-delete-record');
+        delBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = e.currentTarget.getAttribute('data-index');
-                if (confirm("Delete this maintenance record?")) {
+                if (confirm('Delete this maintenance record?')) {
                     machine.maintenanceHistory.splice(idx, 1);
                     StorageService.saveMachine(machine);
-                    this.renderMaintenanceLog(machine, tbodyElement);
+                    this.renderMaintenanceLog(machine, containerElement);
                 }
             });
         });
+    },
+
+    updateLegendsAndScales(machine, DOM) {
+        const warn = Math.round((machine.ratedLife || 25000) * 0.8);
+        const rated = machine.ratedLife || 25000;
+
+        if (DOM.legendSafe) DOM.legendSafe.textContent = `0 – ${warn - 1} hrs`;
+        if (DOM.legendWarning) DOM.legendWarning.textContent = `${warn} – ${rated - 1} hrs`;
+        if (DOM.legendAlarm) DOM.legendAlarm.textContent = `${rated}+ hrs`;
+
+        if (DOM.scaleWarn) DOM.scaleWarn.textContent = `${warn} hrs (WARN)`;
+        if (DOM.scaleAlarm) DOM.scaleAlarm.textContent = `${rated} hrs (ALARM)`;
     },
 
     renderCalibrationHistory(machine, tbodyElement) {
@@ -260,8 +270,8 @@ export const MachineController = {
 
             tr.innerHTML = `
                 <td>${dateStr}</td>
-                <td><strong>${Number(rec.estimatedHour).toLocaleString()} hrs</strong></td>
-                <td><strong>${Number(rec.actualHour).toLocaleString()} hrs</strong></td>
+                <td><strong>${Number(rec.estimatedHour)} hrs</strong></td>
+                <td><strong>${Number(rec.actualHour)} hrs</strong></td>
                 <td style="color:${diffColor}; font-weight:700;">${diffText}</td>
                 <td>${rec.reason || 'Manual Verification'}</td>
                 <td style="color:var(--primary); font-weight:600;">${rec.rating || ''}</td>

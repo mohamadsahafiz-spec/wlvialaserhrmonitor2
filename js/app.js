@@ -26,6 +26,8 @@ function initDOM() {
         viewFleet: document.getElementById('view-fleet'),
         viewSingle: document.getElementById('view-single'),
         viewSettings: document.getElementById('view-settings'),
+        navFleet: document.getElementById('nav-fleet'),
+        navSettings: document.getElementById('nav-settings'),
         fleetGrid: document.getElementById('fleet-grid'),
 
         // Filters
@@ -226,12 +228,46 @@ async function initApp() {
 }
 
 function showFleetView() {
-    if (DOM.viewSingle) {
-        DOM.viewSingle.classList.add('hidden');
-        DOM.viewSingle.classList.remove('as-modal');
+    if (DOM.viewSingle && !DOM.viewSingle.classList.contains('hidden')) {
+        const modalContainer = DOM.viewSingle.querySelector('.mach-modal-container');
+        if (modalContainer && AppState.lastCardRect) {
+            const cardRect = AppState.lastCardRect;
+            const modalRect = modalContainer.getBoundingClientRect();
+            
+            // Revert transform to original card position
+            const scaleX = cardRect.width / modalRect.width;
+            const scaleY = cardRect.height / modalRect.height;
+            const translateX = cardRect.left - modalRect.left + (cardRect.width - modalRect.width) / 2;
+            const translateY = cardRect.top - modalRect.top + (cardRect.height - modalRect.height) / 2;
+            
+            modalContainer.style.transition = 'transform 250ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease';
+            modalContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`;
+            modalContainer.style.opacity = '0';
+            
+            DOM.viewSingle.style.transition = 'background-color 250ms ease, backdrop-filter 250ms ease';
+            DOM.viewSingle.style.backgroundColor = 'transparent';
+            DOM.viewSingle.style.backdropFilter = 'blur(0px)';
+            
+            setTimeout(() => {
+                DOM.viewSingle.classList.add('hidden');
+                DOM.viewSingle.classList.remove('as-modal');
+                modalContainer.style.transform = '';
+                modalContainer.style.opacity = '';
+                modalContainer.style.transition = '';
+                DOM.viewSingle.style.backgroundColor = '';
+                DOM.viewSingle.style.backdropFilter = '';
+                DOM.viewSingle.style.transition = '';
+            }, 250);
+        } else {
+            DOM.viewSingle.classList.add('hidden');
+            DOM.viewSingle.classList.remove('as-modal');
+        }
     }
     if (DOM.viewSettings) DOM.viewSettings.classList.add('hidden');
     if (DOM.viewFleet) DOM.viewFleet.classList.remove('hidden');
+
+    if (DOM.navFleet) DOM.navFleet.classList.add('active');
+    if (DOM.navSettings) DOM.navSettings.classList.remove('active');
 
     AppState.currentMachineId = null;
     setQueryParam('id', null);
@@ -242,13 +278,9 @@ function showFleetView() {
     }
 }
 
-function handleMachineSelect(id) {
-    if (window.location.pathname.includes('machine.html')) {
-        showMachineDetail(id);
-    } else if (DOM.viewSingle) {
-        showMachineDetail(id);
-    } else {
-        window.location.href = `machine.html?id=${id}`;
+function handleMachineSelect(id, cardElement) {
+    if (DOM.viewSingle) {
+        showMachineDetail(id, cardElement);
     }
 }
 
@@ -289,20 +321,63 @@ function handleDeleteMachine(id) {
     });
 }
 
-function showMachineDetail(id) {
+function showMachineDetail(id, cardElement) {
     AppState.currentMachineId = id;
     setQueryParam('id', id);
 
-    if (DOM.viewFleet) {
-        DOM.viewFleet.classList.remove('hidden');
-        if (DOM.viewSingle) {
-            DOM.viewSingle.classList.add('as-modal');
-            DOM.viewSingle.classList.remove('hidden');
-        }
-    } else {
-        if (DOM.viewSingle) DOM.viewSingle.classList.remove('hidden');
-    }
     if (DOM.viewSettings) DOM.viewSettings.classList.add('hidden');
+
+    if (DOM.viewSingle) {
+        DOM.viewSingle.classList.add('as-modal');
+        DOM.viewSingle.classList.remove('hidden');
+        
+        // Wait for next frame to ensure modal container is rendered to get its dimensions
+        requestAnimationFrame(() => {
+            if (cardElement) {
+                const modalContainer = DOM.viewSingle.querySelector('.mach-modal-container');
+                if (modalContainer) {
+                    const cardRect = cardElement.getBoundingClientRect();
+                    const modalRect = modalContainer.getBoundingClientRect();
+                    
+                    // Calculate scale and translation
+                    const scaleX = cardRect.width / modalRect.width;
+                    const scaleY = cardRect.height / modalRect.height;
+                    
+                    const translateX = cardRect.left - modalRect.left + (cardRect.width - modalRect.width) / 2;
+                    const translateY = cardRect.top - modalRect.top + (cardRect.height - modalRect.height) / 2;
+                    
+                    // Initial state for animation
+                    modalContainer.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scaleX}, ${scaleY})`;
+                    modalContainer.style.opacity = '0';
+                    modalContainer.style.transformOrigin = 'center center';
+                    modalContainer.style.transition = 'none';
+                    
+                    DOM.viewSingle.style.backgroundColor = 'transparent';
+                    DOM.viewSingle.style.backdropFilter = 'blur(0px)';
+                    DOM.viewSingle.style.transition = 'none';
+                    
+                    // Force reflow
+                    modalContainer.offsetHeight;
+                    
+                    // Animate to center
+                    modalContainer.style.transition = 'transform 300ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 200ms ease';
+                    modalContainer.style.transform = 'translate(0, 0) scale(1)';
+                    modalContainer.style.opacity = '1';
+                    
+                    DOM.viewSingle.style.transition = 'background-color 300ms ease, backdrop-filter 300ms ease';
+                    DOM.viewSingle.style.backgroundColor = 'rgba(15, 23, 42, 0.75)';
+                    DOM.viewSingle.style.backdropFilter = 'blur(14px)';
+                    
+                    // Store the originating rect for close animation
+                    AppState.lastCardRect = cardRect;
+                }
+            } else {
+                // Fallback if no card element is passed
+                DOM.viewSingle.style.backgroundColor = 'rgba(15, 23, 42, 0.75)';
+                DOM.viewSingle.style.backdropFilter = 'blur(14px)';
+            }
+        });
+    }
 
     const machine = AppState.machines.find(m => m.id === id);
     if (!machine) return;
@@ -326,9 +401,25 @@ function showSettingsView() {
     if (DOM.viewFleet) DOM.viewFleet.classList.add('hidden');
     if (DOM.viewSingle) DOM.viewSingle.classList.add('hidden');
     if (DOM.viewSettings) DOM.viewSettings.classList.remove('hidden');
+
+    if (DOM.navSettings) DOM.navSettings.classList.add('active');
+    if (DOM.navFleet) DOM.navFleet.classList.remove('active');
 }
 
 function setupEventListeners() {
+    // Navigation SPA Listeners
+    if (DOM.navFleet) {
+        DOM.navFleet.addEventListener('click', (e) => {
+            e.preventDefault();
+            showFleetView();
+        });
+    }
+    if (DOM.navSettings) {
+        DOM.navSettings.addEventListener('click', (e) => {
+            e.preventDefault();
+            showSettingsView();
+        });
+    }
     // Search & Filter Listeners
     if (DOM.filterSearch) DOM.filterSearch.addEventListener('input', (e) => {
         AppState.filters.search = e.target.value;
@@ -502,11 +593,27 @@ function setupEventListeners() {
     }
 
     // Secondary Action Triggers
+    
+    const openRecalibrateModal = () => {
+        requireEngineerMode(() => {
+            const machine = AppState.machines.find(m => m.id === AppState.currentMachineId);
+            if (!machine) return;
+
+            const evalTime = getEvalTime();
+            const est = LaserEngine.calculateEstimatedHour(machine.baseLaserHour, machine.baseTimestamp, evalTime);
+
+            if (DOM.recalCurrentEstDisplay) DOM.recalCurrentEstDisplay.textContent = `${Math.round(est * 10) / 10} hrs`;
+            if (DOM.recalActualInput) DOM.recalActualInput.value = Math.round(est);
+            if (DOM.recalReasonSelect) DOM.recalReasonSelect.value = 'Scheduled PM';
+
+            UI.showModal(DOM.recalOverlay);
+        });
+    };
+    if (DOM.btnOpenRecalibrate) DOM.btnOpenRecalibrate.addEventListener('click', openRecalibrateModal);
+
     const btnOpenRecal2 = document.getElementById('btn-open-recalibrate-2');
     if (btnOpenRecal2) {
-        btnOpenRecal2.addEventListener('click', () => {
-            if (DOM.btnOpenRecalibrate) DOM.btnOpenRecalibrate.click();
-        });
+        btnOpenRecal2.addEventListener('click', openRecalibrateModal);
     }
 
     const btnEditConfig = document.getElementById('btn-edit-config-trigger');
@@ -572,22 +679,6 @@ function setupEventListeners() {
     });
 
     // Recalibration Flow
-    if (DOM.btnOpenRecalibrate) DOM.btnOpenRecalibrate.addEventListener('click', () => {
-        requireEngineerMode(() => {
-            const machine = AppState.machines.find(m => m.id === AppState.currentMachineId);
-            if (!machine) return;
-
-            const evalTime = getEvalTime();
-            const est = LaserEngine.calculateEstimatedHour(machine.baseLaserHour, machine.baseTimestamp, evalTime);
-
-            if (DOM.recalCurrentEstDisplay) DOM.recalCurrentEstDisplay.textContent = `${Math.round(est * 10) / 10} hrs`;
-            if (DOM.recalActualInput) DOM.recalActualInput.value = Math.round(est);
-            if (DOM.recalReasonSelect) DOM.recalReasonSelect.value = 'Scheduled PM';
-
-            UI.showModal(DOM.recalOverlay);
-        });
-    });
-
     const closeRecalModal = () => UI.hideModal(DOM.recalOverlay);
     if (DOM.btnCloseRecalModal) DOM.btnCloseRecalModal.addEventListener('click', closeRecalModal);
     if (DOM.btnCancelRecalModal) DOM.btnCancelRecalModal.addEventListener('click', closeRecalModal);
@@ -608,8 +699,8 @@ function setupEventListeners() {
         const result = RecalibrationController.prepareRecalibration(machine, actualHour, reason, evalTime);
         AppState.pendingRecalibration = result;
 
-        if (DOM.devEstHourDisplay) DOM.devEstHourDisplay.textContent = `${result.analysis.estimatedHour.toLocaleString()} hrs`;
-        if (DOM.devActualHourDisplay) DOM.devActualHourDisplay.textContent = `${result.analysis.actualHour.toLocaleString()} hrs`;
+        if (DOM.devEstHourDisplay) DOM.devEstHourDisplay.textContent = `${result.analysis.estimatedHour} hrs`;
+        if (DOM.devActualHourDisplay) DOM.devActualHourDisplay.textContent = `${result.analysis.actualHour} hrs`;
 
         const diff = result.analysis.difference;
         if (DOM.devDiffDisplay) {
