@@ -170,7 +170,5 @@ body {
     .app-container { padding: 0; }
     .btn, .toolbar, .back-btn, .nav-links { display: none !important; }
     .mainGrid { grid-template-columns: 300px 1fr; }
-}
-
     .value, .statusText { color: black !important; text-shadow: none !important; }
 }
