@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wafer Driller BMD302W/BMD250WM Management - Machine Detail</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Modular CSS Structure -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/cards.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+    <!-- =====================================================
+         HEADER / SCADA TITLE BAR
+    ===================================================== -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="brand">
+                <div class="logo-box">
+                    <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                </div>
+                <div>
+                    <h1>Wafer Driller BMD302W/BMD250WM Management</h1>
+                    <div class="subtitle">Laser Lifetime & Hour Recalibration Engine • Machine Detail</div>
+                </div>
+            </div>
+
+            <nav class="nav-links">
+                <a href="index.html" class="nav-item">Fleet Overview</a>
+                <a href="machine.html" class="nav-item active">Machine Detail</a>
+                <a href="settings.html" class="nav-item">Settings</a>
+            </nav>
+
+            <div class="header-controls">
+                <button id="btn-toggle-mode" class="badge-btn badge-engineer" title="Click to switch access mode">
+                    <span class="mode-icon">🔒</span>
+                    <span id="mode-label">ENGINEER MODE</span>
+                </button>
+                <div class="date-picker-wrap">
+                    <label for="todayDate">Simulated Today:</label>
+                    <input type="date" id="todayDate" class="input-control">
+                </div>
+                <button id="btn-export-csv" class="btn btn-secondary" title="Export CSV Report">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Export CSV
+                </button>
+                <button id="btn-print" class="btn btn-secondary" title="Print Report">
+                    <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    Print
+                </button>
+                <button id="btn-theme" class="btn-icon" title="Toggle Light/Dark Theme">
+                    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-container">
+
+        <!-- =====================================================
+             VIEW 2: SINGLE MACHINE DASHBOARD
+        ===================================================== -->
+        <section id="view-single" class="single-view">
+            <!-- Top Action Navigation -->
+            <div class="nav-bar">
+                <button id="btn-back" class="btn btn-secondary">
+                    <svg class="icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    Back to Fleet Overview
+                </button>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <button id="btn-open-recalibrate" class="btn btn-primary" style="background: linear-gradient(135deg, var(--primary), #2563eb); border: none;">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                        Recalibrate Laser Hour
+                    </button>
+                    <button id="btn-save-machine" class="btn btn-secondary" title="Save changes (Ctrl+S)">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        Save Configuration
+                    </button>
+                    <button id="btn-delete-machine" class="btn btn-danger-outline" title="Delete Machine">
+                        <svg class="icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recalibration Confidence Center -->
+            <div class="confidence-center glass-panel">
+                <div class="conf-item">
+                    <div class="conf-label">Continuous Estimated Hour</div>
+                    <div id="conf-estimated-hour" class="conf-value" style="color:var(--primary)">12,500 hrs</div>
+                </div>
+                <div class="conf-item">
+                    <div class="conf-label">Recalibration Accuracy</div>
+                    <div id="conf-accuracy" class="conf-value" style="color:var(--green)">🟢 HIGH</div>
+                </div>
+                <div class="conf-item">
+                    <div class="conf-label">Last Recalibrated</div>
+                    <div id="conf-last-recal" class="conf-value" style="font-size:14px; color:var(--text-main)">2026-06-28 00:00</div>
+                </div>
+                <div class="conf-item">
+                    <div class="conf-label">Next Recalibration Advisory</div>
+                    <div id="conf-next-recal" class="conf-value" style="font-size:14px; color:var(--muted)">2026-07-28</div>
+                </div>
+                <div class="conf-item">
+                    <div class="conf-label">System Recommendation</div>
+                    <div id="conf-status" class="conf-value" style="font-size:13px; color:var(--green)">No Action Required</div>
+                </div>
+            </div>
+
+            <!-- Machine Information & Baseline Panel -->
+            <div class="glass-panel panel-section">
+                <div class="panel-header">
+                    <h2>Machine Profile & Laser Baseline</h2>
+                    <span class="badge badge-info">Source of Truth: Physical Hour Meter</span>
+                </div>
+                <div class="machine-info-grid">
+                    <div class="form-group">
+                        <label>Machine No</label>
+                        <input type="text" id="det-mach-no" class="input-control" value="WD-101">
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <select id="det-model" class="input-control">
+                            <option value="BMD302W">BMD302W</option>
+                            <option value="BMD250WM">BMD250WM</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Serial Number</label>
+                        <input type="text" id="det-serial-no" class="input-control" value="BMD3-9021">
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select id="det-dept" class="input-control">
+                            <option value="Wafer Prep">Wafer Prep</option>
+                            <option value="Packaging">Packaging</option>
+                            <option value="R&D">R&D</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Rated Life Limit (hrs)</label>
+                        <input type="number" id="det-rated" class="input-control" value="25000">
+                    </div>
+                    <div class="form-group">
+                        <label>Baseline Laser Hour</label>
+                        <input type="number" id="prevHour" class="input-control" value="12500">
+                    </div>
+                    <div class="form-group">
+                        <label>Baseline Timestamp</label>
+                        <input type="datetime-local" id="prevDate" class="input-control">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Metric Cards Grid -->
+            <div class="grid">
+                <!-- Current Estimated Hour Card -->
+                <div class="card glass-panel">
+                    <div class="card-header">
+                        <span class="title">Current Estimated Hour</span>
+                        <div class="icon-wrap bg-blue"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg></div>
+                    </div>
+                    <div id="currentHour" class="value">0 hrs</div>
+                    <div id="currentAge" class="sub">0 Years • 0 Days</div>
+                </div>
+
+                <!-- Continuous Running Time Card -->
+                <div class="card glass-panel">
+                    <div class="card-header">
+                        <span class="title">Running Since Baseline</span>
+                        <div class="icon-wrap bg-purple"><svg class="icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
+                    </div>
+                    <div id="runningHour" class="value">0 hrs</div>
+                    <div id="runningDay" class="sub">0 Days</div>
+                </div>
+
+                <!-- Remaining Laser Hour Card -->
+                <div id="remainingCard" class="card glass-panel">
+                    <div class="card-header">
+                        <span class="title">Remaining Lifetime</span>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span id="remainingText" style="font-size:12px; font-weight:700;">SAFE</span>
+                            <div id="remainingDot" class="led bg-safe led-solid"></div>
+                        </div>
+                    </div>
+                    <div id="remainingHour" class="value color-safe">0 hrs</div>
+                    <div id="remainingDay" class="sub">0 Days to WARNING</div>
+                </div>
+
+                <!-- Lifetime Status Card -->
+                <div class="card glass-panel">
+                    <div class="card-header">
+                        <span class="title">Lifetime Status & Advisory</span>
+                        <div class="icon-wrap bg-slate"><svg class="icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg></div>
+                    </div>
+                    <div id="statusText" class="value color-safe" style="font-size:24px;">SAFE</div>
+                    <div id="recommendation" class="sub" style="line-height:1.4;">Continue normal operation. Review during next preventive maintenance.</div>
+                </div>
+            </div>
+
+            <!-- Health Progress Gauge Section -->
+            <div class="glass-panel progress-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div>
+                        <h3 style="font-size:16px; font-weight:700; color:var(--text-main);">Laser Diode Lifetime Consumption</h3>
+                        <div style="font-size:12px; color:var(--muted); margin-top:2px;">Linear scale based on rated operating limit</div>
+                    </div>
+                    <div id="healthPercent" style="font-size:20px; font-weight:800; color:var(--primary);">0%</div>
+                </div>
+
+                <div class="progress-track">
+                    <div id="progressBar" class="progress-fill" style="width: 0%;"></div>
+                </div>
+
+                <div class="progress-scale">
+                    <span>0 hrs</span>
+                    <span id="scaleWarn">20,000 hrs (WARN)</span>
+                    <span id="scaleAlarm">25,000 hrs (ALARM)</span>
+                </div>
+
+                <div class="legend-bar">
+                    <div class="legend-item"><div class="legend-box bg-safe"></div> SAFE: <span id="legend-safe">0 – 19,999 hrs</span></div>
+                    <div class="legend-item"><div class="legend-box bg-warning"></div> WARNING: <span id="legend-warning">20,000 – 24,999 hrs</span></div>
+                    <div class="legend-item"><div class="legend-box bg-alarm"></div> ALARM: <span id="legend-alarm">25,000+ hrs</span></div>
+                </div>
+            </div>
+
+            <!-- Recalibration & Verification Audit Log -->
+            <div class="glass-panel panel-section">
+                <div class="panel-header">
+                    <div>
+                        <h2>Recalibration & Deviation Audit History</h2>
+                        <div style="font-size:12px; color:var(--muted); margin-top:2px;">Historical records of machine meter readings vs estimated laser hours</div>
+                    </div>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Recalibrated Timestamp</th>
+                                <th>Estimated Hr Before</th>
+                                <th>Actual Meter Hr</th>
+                                <th>Deviation</th>
+                                <th>Reason</th>
+                                <th>Accuracy Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calibration-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Maintenance History Table Section -->
+            <div class="glass-panel panel-section">
+                <div class="panel-header">
+                    <div>
+                        <h2>Maintenance Log</h2>
+                        <div style="font-size:12px; color:var(--muted); margin-top:2px;">Track lens cleans, filter replacements, and diode module servicing</div>
+                    </div>
+                    <button id="btn-add-record" class="btn btn-secondary btn-sm">
+                        <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        + Add Record
+                    </button>
+                </div>
+                <div class="table-wrap">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Engineer</th>
+                                <th>Action Taken</th>
+                                <th>Notes / Findings</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="maintenance-tbody">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- =====================================================
+         MODAL: RECALIBRATE HOUR
+    ===================================================== -->
+    <div id="recalibrate-modal-overlay" class="modal-overlay">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3>Recalibrate Machine Laser Hour</h3>
+                <button id="btn-close-recal-modal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">
+                    Enter the exact physical machine hour meter reading observed on the machine panel.
+                </p>
+                <div class="form-group">
+                    <label>Current Estimated Laser Hour</label>
+                    <div id="recal-current-est" style="font-size:18px; font-weight:700; color:var(--primary); padding:8px 0;">0 hrs</div>
+                </div>
+                <div class="form-group">
+                    <label>Actual Machine Hour Meter Reading</label>
+                    <input type="number" id="recal-actual-hour" class="input-control" placeholder="e.g. 12510">
+                </div>
+                <div class="form-group">
+                    <label>Recalibration Reason</label>
+                    <select id="recal-reason" class="input-control">
+                        <option value="Scheduled PM">Scheduled PM</option>
+                        <option value="Manual Verification">Manual Verification</option>
+                        <option value="Laser Tube Replacement">Laser Tube Replacement</option>
+                        <option value="Breakdown Service">Breakdown Service</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-recal-modal" class="btn btn-secondary">Cancel</button>
+                <button id="btn-submit-recalibrate" class="btn btn-primary">Calculate Deviation & Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         MODAL: DEVIATION ANALYSIS
+    ===================================================== -->
+    <div id="deviation-modal-overlay" class="modal-overlay">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3>Deviation Analysis & Accuracy Assessment</h3>
+                <button id="btn-close-dev-modal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="deviation-grid">
+                    <div class="dev-card">
+                        <div class="dev-label">Estimated Hour</div>
+                        <div id="dev-est-hour" class="dev-val">0 hrs</div>
+                    </div>
+                    <div class="dev-card">
+                        <div class="dev-label">Actual Meter Reading</div>
+                        <div id="dev-actual-hour" class="dev-val">0 hrs</div>
+                    </div>
+                    <div class="dev-card">
+                        <div class="dev-label">Deviation Difference</div>
+                        <div id="dev-diff" class="dev-val" style="color:var(--green)">0 hrs</div>
+                    </div>
+                    <div class="dev-card">
+                        <div class="dev-label">Accuracy Rating</div>
+                        <div id="dev-rating" class="dev-val" style="color:var(--primary); font-size:16px;">★★★★★ Excellent</div>
+                    </div>
+                </div>
+                <div id="dev-warning-box" class="warning-box hidden">
+                    <!-- Dynamic warning message -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-back-dev-modal" class="btn btn-secondary">Re-enter Value</button>
+                <button id="btn-confirm-deviation" class="btn btn-primary">Confirm & Update Baseline</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         MODAL: ENGINEER MODE AUTHENTICATION
+    ===================================================== -->
+    <div id="mode-modal-overlay" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:420px;">
+            <div class="modal-header">
+                <h3 id="mode-modal-title">Engineer Access Authentication</h3>
+                <button id="btn-close-mode-modal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:14px; color:var(--muted);" id="mode-modal-desc">
+                    Please enter the Engineer Password to unlock full configuration, recalibration, and editing access.
+                </p>
+                <div class="form-group" style="margin-top:14px;">
+                    <label>Engineer Password</label>
+                    <input type="password" id="input-mode-password" class="input-control" placeholder="Enter password (default: 1234)">
+                    <div id="mode-password-error" style="color:var(--red); font-size:13px; margin-top:6px; display:none;">
+                        Incorrect password. Please try again.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-mode-modal" class="btn btn-secondary">Cancel</button>
+                <button id="btn-submit-mode-auth" class="btn btn-primary">Unlock Engineer Mode</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ES6 Application Script -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>

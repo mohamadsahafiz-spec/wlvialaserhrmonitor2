@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wafer Driller BMD302W/BMD250WM Management - Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Modular CSS Structure -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/cards.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+    <!-- =====================================================
+         HEADER / SCADA TITLE BAR
+    ===================================================== -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="brand">
+                <div class="logo-box">
+                    <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                </div>
+                <div>
+                    <h1>Wafer Driller BMD302W/BMD250WM Management</h1>
+                    <div class="subtitle">Laser Lifetime & Hour Recalibration Engine • Settings & System Config</div>
+                </div>
+            </div>
+
+            <nav class="nav-links">
+                <a href="index.html" class="nav-item">Fleet Overview</a>
+                <a href="settings.html" class="nav-item active">Settings</a>
+            </nav>
+
+            <div class="header-controls">
+                <button id="btn-toggle-mode" class="badge-btn badge-engineer" title="Click to switch access mode">
+                    <span class="mode-icon">🔒</span>
+                    <span id="mode-label">ENGINEER MODE</span>
+                </button>
+                <button id="btn-theme" class="btn-icon" title="Toggle Light/Dark Theme">
+                    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-container">
+
+        <!-- =====================================================
+             VIEW 3: SYSTEM SETTINGS
+        ===================================================== -->
+        <section id="view-settings" class="settings-view">
+            <div class="glass-panel panel-section">
+                <div class="panel-header">
+                    <h2>SCADA Engine Configuration</h2>
+                    <span class="badge badge-info">v5.0 Modular Architecture</span>
+                </div>
+                <div class="form-grid" style="margin-top: 16px;">
+                    <div class="form-group">
+                        <label>Application Title</label>
+                        <input type="text" id="cfg-app-title" class="input-control" value="Wafer Driller BMD302W/BMD250WM Management">
+                    </div>
+                    <div class="form-group">
+                        <label>Default Rated Laser Life (hrs)</label>
+                        <input type="number" id="cfg-rated-life" class="input-control" value="25000">
+                    </div>
+                    <div class="form-group">
+                        <label>Warning Limit Threshold (%)</label>
+                        <input type="number" id="cfg-warn-pct" class="input-control" value="80">
+                    </div>
+                    <div class="form-group">
+                        <label>Recalibration Interval Advisory (Days)</label>
+                        <input type="number" id="cfg-recal-interval" class="input-control" value="30">
+                    </div>
+                    <div class="form-group">
+                        <label>Engineer Mode Password</label>
+                        <input type="password" id="cfg-eng-password" class="input-control" value="1234">
+                    </div>
+                </div>
+                <div style="margin-top:20px; display:flex; gap:12px;">
+                    <button id="btn-save-settings" class="btn btn-primary">Save Settings</button>
+                    <button id="btn-reset-defaults" class="btn btn-secondary">Restore Defaults</button>
+                </div>
+            </div>
+
+            <div class="glass-panel panel-section" style="margin-top: 24px;">
+                <div class="panel-header">
+                    <h2>Fleet Data Backup & Synchronization</h2>
+                </div>
+                <p style="font-size:14px; color:var(--muted); margin-bottom: 16px;">
+                    Export all laser driller machine configurations, maintenance history, and calibration audit logs to a JSON file or import a backup.
+                </p>
+                <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                    <button id="btn-export-json" class="btn btn-secondary">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Export Fleet Backup (.json)
+                    </button>
+                    <label class="btn btn-secondary" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px;">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        Import Fleet Backup (.json)
+                        <input type="file" id="input-import-json" accept=".json" style="display:none;">
+                    </label>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- =====================================================
+         MODAL: ENGINEER MODE AUTHENTICATION
+    ===================================================== -->
+    <div id="mode-modal-overlay" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:420px;">
+            <div class="modal-header">
+                <h3 id="mode-modal-title">Engineer Access Authentication</h3>
+                <button id="btn-close-mode-modal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:14px; color:var(--muted);" id="mode-modal-desc">
+                    Please enter the Engineer Password to unlock full configuration, recalibration, and editing access.
+                </p>
+                <div class="form-group" style="margin-top:14px;">
+                    <label>Engineer Password</label>
+                    <input type="password" id="input-mode-password" class="input-control" placeholder="Enter password (default: 1234)">
+                    <div id="mode-password-error" style="color:var(--red); font-size:13px; margin-top:6px; display:none;">
+                        Incorrect password. Please try again.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-mode-modal" class="btn btn-secondary">Cancel</button>
+                <button id="btn-submit-mode-auth" class="btn btn-primary">Unlock Engineer Mode</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ES6 Application Script -->
+    <script type="module">
+        import { StorageService } from './js/storage.js';
+        import { UI } from './js/ui.js';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            let settings = StorageService.loadSettings();
+            UI.applyTheme(settings.theme);
+
+            const titleEl = document.getElementById('cfg-app-title');
+            const ratedEl = document.getElementById('cfg-rated-life');
+            const warnEl = document.getElementById('cfg-warn-pct');
+            const recalEl = document.getElementById('cfg-recal-interval');
+            const passEl = document.getElementById('cfg-eng-password');
+            const btnSave = document.getElementById('btn-save-settings');
+            const btnReset = document.getElementById('btn-reset-defaults');
+            const btnTheme = document.getElementById('btn-theme');
+            const btnExport = document.getElementById('btn-export-json');
+            const inputImport = document.getElementById('input-import-json');
+
+            const btnToggleMode = document.getElementById('btn-toggle-mode');
+            const modeLabel = document.getElementById('mode-label');
+            const modeModalOverlay = document.getElementById('mode-modal-overlay');
+            const inputModePassword = document.getElementById('input-mode-password');
+            const btnSubmitModeAuth = document.getElementById('btn-submit-mode-auth');
+            const btnCancelModeModal = document.getElementById('btn-cancel-mode-modal');
+            const btnCloseModeModal = document.getElementById('btn-close-mode-modal');
+            const modePasswordError = document.getElementById('mode-password-error');
+
+            function updateModeUI() {
+                const isEng = settings.accessMode === 'ENGINEER';
+                if (btnToggleMode) {
+                    btnToggleMode.className = `badge-btn ${isEng ? 'badge-engineer' : 'badge-customer'}`;
+                    btnToggleMode.innerHTML = `<span class="mode-icon">${isEng ? '🔒' : '👁️'}</span> <span id="mode-label">${isEng ? 'ENGINEER MODE' : 'CUSTOMER MODE'}</span>`;
+                }
+            }
+
+            if (titleEl) titleEl.value = settings.systemTitle || 'Wafer Driller BMD302W/BMD250WM Management';
+            if (ratedEl) ratedEl.value = settings.defaultRatedLife || 25000;
+            if (warnEl) warnEl.value = settings.defaultWarningPercentage || 80;
+            if (recalEl) recalEl.value = settings.recalibrationIntervalDays || 30;
+            if (passEl) passEl.value = settings.engineerPassword || '1234';
+
+            updateModeUI();
+
+            if (btnToggleMode) {
+                btnToggleMode.addEventListener('click', () => {
+                    if (settings.accessMode === 'ENGINEER') {
+                        settings.accessMode = 'CUSTOMER';
+                        StorageService.saveSettings(settings);
+                        updateModeUI();
+                        UI.showToast('Switched to Customer Mode (Read-Only)', 'warning');
+                    } else {
+                        inputModePassword.value = '';
+                        modePasswordError.style.display = 'none';
+                        UI.showModal(modeModalOverlay);
+                    }
+                });
+            }
+
+            if (btnSubmitModeAuth) {
+                btnSubmitModeAuth.addEventListener('click', () => {
+                    if (inputModePassword.value === (settings.engineerPassword || '1234')) {
+                        settings.accessMode = 'ENGINEER';
+                        StorageService.saveSettings(settings);
+                        updateModeUI();
+                        UI.hideModal(modeModalOverlay);
+                        UI.showToast('Engineer Mode Unlocked!', 'success');
+                    } else {
+                        modePasswordError.style.display = 'block';
+                    }
+                });
+            }
+
+            if (btnCancelModeModal) btnCancelModeModal.addEventListener('click', () => UI.hideModal(modeModalOverlay));
+            if (btnCloseModeModal) btnCloseModeModal.addEventListener('click', () => UI.hideModal(modeModalOverlay));
+
+            if (btnTheme) {
+                btnTheme.addEventListener('click', () => {
+                    const theme = UI.toggleTheme();
+                    settings.theme = theme;
+                    StorageService.saveSettings(settings);
+                });
+            }
+
+            if (btnSave) {
+                btnSave.addEventListener('click', () => {
+                    if (settings.accessMode !== 'ENGINEER') {
+                        inputModePassword.value = '';
+                        modePasswordError.style.display = 'none';
+                        UI.showModal(modeModalOverlay);
+                        return;
+                    }
+                    settings.systemTitle = titleEl.value;
+                    settings.defaultRatedLife = Number(ratedEl.value) || 25000;
+                    settings.defaultWarningPercentage = Number(warnEl.value) || 80;
+                    settings.recalibrationIntervalDays = Number(recalEl.value) || 30;
+                    settings.engineerPassword = passEl.value || '1234';
+                    StorageService.saveSettings(settings);
+                    UI.showToast('System Settings Saved ✓', 'success');
+                });
+            }
+
+            if (btnReset) {
+                btnReset.addEventListener('click', () => {
+                    if (settings.accessMode !== 'ENGINEER') {
+                        inputModePassword.value = '';
+                        modePasswordError.style.display = 'none';
+                        UI.showModal(modeModalOverlay);
+                        return;
+                    }
+                    if (confirm('Restore default SCADA settings?')) {
+                        localStorage.removeItem('wafer_driller_settings_v5');
+                        location.reload();
+                    }
+                });
+            }
+
+            if (btnExport) {
+                btnExport.addEventListener('click', () => {
+                    const machines = StorageService.loadMachines();
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(machines, null, 2));
+                    const dlAnchor = document.createElement('a');
+                    dlAnchor.setAttribute("href", dataStr);
+                    dlAnchor.setAttribute("download", `Wafer_Driller_Fleet_Backup_${new Date().toISOString().split('T')[0]}.json`);
+                    document.body.appendChild(dlAnchor);
+                    dlAnchor.click();
+                    dlAnchor.remove();
+                    UI.showToast('Fleet Backup JSON Exported!', 'success');
+                });
+            }
+
+            if (inputImport) {
+                inputImport.addEventListener('change', (e) => {
+                    if (settings.accessMode !== 'ENGINEER') {
+                        inputModePassword.value = '';
+                        modePasswordError.style.display = 'none';
+                        UI.showModal(modeModalOverlay);
+                        return;
+                    }
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const imported = JSON.parse(event.target.result);
+                            if (Array.isArray(imported)) {
+                                StorageService.saveMachines(imported);
+                                UI.showToast("Fleet backup imported successfully!", "success");
+                                setTimeout(() => window.location.href = 'index.html', 1000);
+                            } else {
+                                UI.showToast("Invalid JSON file format.", "error");
+                            }
+                        } catch (err) {
+                            UI.showToast("Failed to parse JSON file: " + err.message, "error");
+                        }
+                    };
+                    reader.readAsText(file);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

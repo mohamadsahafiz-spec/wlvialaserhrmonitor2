@@ -1,0 +1,124 @@
+[
+  {
+    "id": "WD-101-ID",
+    "machineNo": "WD-101",
+    "machineName": "Wafer Driller BMD302W",
+    "serialNo": "BMD3-9021",
+    "manufacturer": "SemiconTech",
+    "model": "BMD302W",
+    "department": "Wafer Prep",
+    "ratedLife": 25000,
+    "warningLife": 20000,
+    "baseLaserHour": 12500,
+    "baseTimestamp": "2026-06-28T00:00:00.000Z",
+    "lastRecalibrationDate": "2026-06-28T00:00:00.000Z",
+    "maintenanceHistory": [
+      {
+        "date": "2026-03-30",
+        "engineer": "J. Smith",
+        "action": "Lens Clean",
+        "notes": "Routine check"
+      },
+      {
+        "date": "2026-05-29",
+        "engineer": "M. Doe",
+        "action": "Filter Replace",
+        "notes": "Dust accumulation high"
+      }
+    ],
+    "calibrationHistory": [
+      {
+        "date": "2026-06-28T00:00:00.000Z",
+        "estimatedHour": 12490,
+        "actualHour": 12500,
+        "difference": 10,
+        "reason": "Scheduled PM",
+        "rating": "★★★★★ Excellent"
+      }
+    ],
+    "lastUpdated": "2026-07-28T00:00:00.000Z"
+  },
+  {
+    "id": "WD-102-ID",
+    "machineNo": "WD-102",
+    "machineName": "Wafer Driller BMD250WM",
+    "serialNo": "BMD2-40401",
+    "manufacturer": "SemiconTech",
+    "model": "BMD250WM",
+    "department": "Packaging",
+    "ratedLife": 25000,
+    "warningLife": 20000,
+    "baseLaserHour": 19800,
+    "baseTimestamp": "2026-06-13T00:00:00.000Z",
+    "lastRecalibrationDate": "2026-06-13T00:00:00.000Z",
+    "maintenanceHistory": [
+      {
+        "date": "2026-05-19",
+        "engineer": "T. Stark",
+        "action": "Calibration",
+        "notes": "Beam alignment drift corrected"
+      }
+    ],
+    "calibrationHistory": [
+      {
+        "date": "2026-06-13T00:00:00.000Z",
+        "estimatedHour": 19780,
+        "actualHour": 19800,
+        "difference": 20,
+        "reason": "Manual Verification",
+        "rating": "★★★★☆ Very Good"
+      }
+    ],
+    "lastUpdated": "2026-07-28T00:00:00.000Z"
+  },
+  {
+    "id": "WD-201-ID",
+    "machineNo": "WD-201",
+    "machineName": "Wafer Driller BMD302W",
+    "serialNo": "BMD3-8832",
+    "manufacturer": "SemiconTech",
+    "model": "BMD302W",
+    "department": "R&D",
+    "ratedLife": 25000,
+    "warningLife": 20000,
+    "baseLaserHour": 24500,
+    "baseTimestamp": "2026-04-24T00:00:00.000Z",
+    "lastRecalibrationDate": "2026-04-24T00:00:00.000Z",
+    "maintenanceHistory": [
+      {
+        "date": "2026-01-09",
+        "engineer": "B. Banner",
+        "action": "Diode Module 1 Replace",
+        "notes": "Power drop detected"
+      }
+    ],
+    "calibrationHistory": [
+      {
+        "date": "2026-04-24T00:00:00.000Z",
+        "estimatedHour": 24450,
+        "actualHour": 24500,
+        "difference": 50,
+        "reason": "Breakdown",
+        "rating": "★★★☆☆ Good"
+      }
+    ],
+    "lastUpdated": "2026-07-28T00:00:00.000Z"
+  },
+  {
+    "id": "WD-305-ID",
+    "machineNo": "WD-305",
+    "machineName": "Wafer Driller BMD250WM",
+    "serialNo": "BMD2-771",
+    "manufacturer": "SemiconTech",
+    "model": "BMD250WM",
+    "department": "Wafer Prep",
+    "ratedLife": 20000,
+    "warningLife": 15000,
+    "baseLaserHour": 2500,
+    "baseTimestamp": "2026-07-18T00:00:00.000Z",
+    "lastRecalibrationDate": "2026-07-18T00:00:00.000Z",
+    "maintenanceHistory": [],
+    "calibrationHistory": [],
+    "lastUpdated": "2026-07-28T00:00:00.000Z"
+  }
+]

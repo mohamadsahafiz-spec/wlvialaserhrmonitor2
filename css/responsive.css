@@ -1,0 +1,53 @@
+/* =====================================================
+   RESPONSIVE.CSS - Media Queries & Print Layout
+   ===================================================== */
+@media (max-width: 1024px) {
+    .mainGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    body {
+        padding: 12px;
+    }
+    .app-container {
+        padding: 16px;
+    }
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    .headerRight {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+    .fleet-grid {
+        grid-template-columns: 1fr;
+    }
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .toolbar .btn {
+        margin-left: 0 !important;
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* PRINT STYLES */
+@media print {
+    body { background: white !important; color: black !important; padding: 0; }
+    body::before, body::after { display: none !important; }
+    .glass-panel { background: white !important; backdrop-filter: none !important; box-shadow: none !important; border: 1px solid #ccc !important; }
+    .app-container { padding: 0; }
+    .btn, .toolbar, .back-btn, .nav-links { display: none !important; }
+    .mainGrid { grid-template-columns: 300px 1fr; }
+    .value, .statusText { color: black !important; text-shadow: none !important; }
+}

@@ -1,0 +1,270 @@
+/* =====================================================
+   STYLE.CSS - CSS Variables, Reset, Typography & Base
+   ===================================================== */
+:root {
+    /* Dark Theme (Default) - Soft Industrial Glass */
+    --bg-body: radial-gradient(circle at 0% 0%, #1e293b 0%, #0f172a 50%, #020617 100%);
+    
+    --glass-bg: rgba(30, 41, 59, 0.45);
+    --glass-bg-hover: rgba(30, 41, 59, 0.65);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-border-highlight: rgba(255, 255, 255, 0.2);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    
+    --input-bg: rgba(0, 0, 0, 0.25);
+    
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    
+    --primary: #38bdf8; /* Soft Cyan */
+    --primary-hover: #0ea5e9;
+    
+    --green: #34d399; /* Soft Emerald */
+    --yellow: #fbbf24; /* Soft Amber */
+    --red: #f87171; /* Soft Red */
+    
+    --transition: all .3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="light"] {
+    /* Light Theme - Soft Industrial Glass */
+    --bg-body: radial-gradient(circle at 0% 0%, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+    
+    --glass-bg: rgba(255, 255, 255, 0.55);
+    --glass-bg-hover: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.6);
+    --glass-border-highlight: rgba(255, 255, 255, 1);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    
+    --input-bg: rgba(255, 255, 255, 0.6);
+    
+    --text: #0f172a;
+    --muted: #64748b;
+    
+    --primary: #0284c7;
+    --primary-hover: #0369a1;
+    
+    --green: #059669;
+    --yellow: #d97706;
+    --red: #dc2626;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg-body);
+    background-attachment: fixed;
+    color: var(--text);
+    padding: 24px;
+    min-height: 100vh;
+    transition: var(--transition);
+    position: relative;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: -10%; left: -10%; width: 50vw; height: 50vh;
+    background: rgba(56, 189, 248, 0.12);
+    filter: blur(120px);
+    z-index: -1;
+    border-radius: 50%;
+    pointer-events: none;
+}
+body::after {
+    content: '';
+    position: fixed;
+    bottom: -10%; right: -10%; width: 50vw; height: 50vh;
+    background: rgba(52, 211, 153, 0.08);
+    filter: blur(120px);
+    z-index: -1;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 20px;
+}
+
+.app-container {
+    max-width: 1600px;
+    margin: auto;
+    padding: 28px;
+    position: relative;
+    z-index: 1;
+}
+
+.hidden { display: none !important; }
+
+/* HEADER & NAVIGATION */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.brand-group {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.brandTitle {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: .5px;
+    background: linear-gradient(90deg, var(--text), var(--primary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-decoration: none;
+}
+
+.brandSubtitle {
+    color: var(--muted);
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.headerRight {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 12px;
+    margin-right: 12px;
+}
+
+.nav-link {
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+.nav-link:hover, .nav-link.active {
+    color: var(--text);
+    background: var(--input-bg);
+}
+
+.badge {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 13px;
+    backdrop-filter: blur(4px);
+}
+
+.btn {
+    padding: 10px 20px;
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    background: var(--glass-bg);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(8px);
+    text-decoration: none;
+}
+
+.btn:hover {
+    border-color: var(--glass-border-highlight);
+    background: var(--glass-bg-hover);
+    transform: translateY(-2px);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: #020617;
+    border-color: var(--primary);
+}
+.btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: #ffffff;
+}
+
+.btn-recalibrate {
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--primary);
+    border: 1px solid var(--primary);
+}
+.btn-recalibrate:hover {
+    background: var(--primary);
+    color: #020617;
+}
+
+.btn-danger {
+    background: rgba(248, 113, 113, 0.15);
+    color: var(--red);
+    border-color: rgba(248, 113, 113, 0.3);
+}
+.btn-danger:hover {
+    background: var(--red);
+    color: #ffffff;
+}
+
+.toolbar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 24px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.input-group label {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+}
+.input-group input, .input-group select {
+    padding: 10px 14px;
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: var(--transition);
+}
+.input-group input:focus, .input-group select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.icon { width: 20px; height: 20px; stroke: var(--primary); stroke-width: 2; fill: none; }

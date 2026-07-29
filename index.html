@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wafer Driller BMD302W/BMD250WM Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Modular CSS Structure -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/cards.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+    <!-- =====================================================
+         HEADER / SCADA TITLE BAR
+    ===================================================== -->
+    <header class="app-header">
+        <div class="header-content">
+            <div class="brand">
+                <div class="logo-box">
+                    <svg class="icon" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                </div>
+                <div>
+                    <h1>Wafer Driller BMD302W/BMD250WM Management</h1>
+                    <div class="subtitle">Laser Lifetime & Hour Recalibration Engine • SCADA v5.0</div>
+                </div>
+            </div>
+
+            <nav class="nav-links">
+                <a href="index.html" class="nav-item active">Fleet Overview</a>
+                <a href="settings.html" class="nav-item">Settings</a>
+            </nav>
+
+            <div class="header-controls">
+                <button id="btn-toggle-mode" class="badge-btn badge-engineer" title="Click to switch access mode">
+                    <span class="mode-icon">🔒</span>
+                    <span id="mode-label">ENGINEER MODE</span>
+                </button>
+                <div class="date-picker-wrap">
+                    <label for="todayDate">Simulated Today:</label>
+                    <input type="date" id="todayDate" class="input-control">
+                </div>
+                <button id="btn-export-csv" class="btn btn-secondary" title="Export CSV Report">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Export CSV
+                </button>
+                <button id="btn-print" class="btn btn-secondary" title="Print Report">
+                    <svg class="icon" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    Print
+                </button>
+                <button id="btn-theme" class="btn-icon" title="Toggle Light/Dark Theme">
+                    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="app-container">
+
+        <!-- =====================================================
+             VIEW 1: FLEET OVERVIEW DASHBOARD
+        ===================================================== -->
+        <section id="view-fleet" class="fleet-view">
+
+            <!-- Fleet Statistics Summary Panel -->
+            <div id="fleet-stats-panel" class="dashboard-stats-grid glass-panel" style="margin-bottom: 20px;">
+                <div class="stat-box">
+                    <div class="stat-title">TOTAL MACHINES</div>
+                    <div id="stat-total-count" class="stat-value">--</div>
+                    <div class="stat-sub">Fleet Active</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">SAFE / OPTIMAL</div>
+                    <div id="stat-safe-count" class="stat-value color-safe">--</div>
+                    <div class="stat-sub">Normal Operation</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">WARNING STATUS</div>
+                    <div id="stat-warn-count" class="stat-value color-warning">--</div>
+                    <div class="stat-sub">&gt;80% Life Limit</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">ALARM STATUS</div>
+                    <div id="stat-alarm-count" class="stat-value color-alarm">--</div>
+                    <div class="stat-sub">Life Exceeded</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">FLEET AVG HEALTH</div>
+                    <div id="stat-avg-health" class="stat-value">--%</div>
+                    <div class="stat-sub">Remaining Life</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">TOTAL FLEET HOURS</div>
+                    <div id="stat-total-hours" class="stat-value">--</div>
+                    <div class="stat-sub">Accumulated Hours</div>
+                </div>
+            </div>
+
+            <div class="toolbar glass-panel">
+                <div class="search-box">
+                    <svg class="icon search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="filter-search" class="input-control" placeholder="Search machine no, serial, or model...">
+                </div>
+                <div class="filter-group">
+                    <select id="filter-status" class="input-control">
+                        <option value="ALL">All Statuses</option>
+                        <option value="SAFE">SAFE Only</option>
+                        <option value="WARNING">WARNING Only</option>
+                        <option value="ALARM">ALARM Only</option>
+                    </select>
+                    <select id="filter-model" class="input-control">
+                        <option value="ALL">All Models</option>
+                        <option value="BMD302W">BMD302W</option>
+                        <option value="BMD250WM">BMD250WM</option>
+                    </select>
+                    <select id="filter-dept" class="input-control">
+                        <option value="ALL">All Departments</option>
+                        <option value="Wafer Prep">Wafer Prep</option>
+                        <option value="Packaging">Packaging</option>
+                        <option value="R&D">R&D</option>
+                    </select>
+                    <select id="filter-sort" class="input-control">
+                        <option value="no-asc">Sort: Machine No (A-Z)</option>
+                        <option value="no-desc">Sort: Machine No (Z-A)</option>
+                        <option value="hour-desc">Sort: Laser Hour (High to Low)</option>
+                        <option value="hour-asc">Sort: Laser Hour (Low to High)</option>
+                        <option value="remain-asc">Sort: Remaining Hours (Most Urgent)</option>
+                        <option value="remain-desc">Sort: Remaining Hours (Least Urgent)</option>
+                        <option value="health-asc">Sort: Health % (Lowest First)</option>
+                        <option value="health-desc">Sort: Health % (Highest First)</option>
+                        <option value="status-urgent">Sort: Status (ALARM -> SAFE)</option>
+                        <option value="recal-newest">Sort: Last Recalibrated (Newest)</option>
+                        <option value="recal-oldest">Sort: Last Recalibrated (Oldest)</option>
+                    </select>
+                    <button id="btn-open-add" class="btn btn-primary">
+                        <svg class="icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        + Add Machine
+                    </button>
+                </div>
+            </div>
+
+            <!-- Fleet Machine Grid -->
+            <div id="fleet-grid" class="fleet-grid">
+                <!-- Dynamically populated by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- =====================================================
+         MODAL: ADD MACHINE
+    ===================================================== -->
+    <div id="add-modal-overlay" class="modal-overlay">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3>Add New Laser Driller Machine</h3>
+                <button id="btn-close-modal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Machine No</label>
+                        <input type="text" id="new-mach-no" class="input-control" placeholder="e.g. WD-104">
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <select id="new-mach-model" class="input-control">
+                            <option value="BMD302W">BMD302W</option>
+                            <option value="BMD250WM">BMD250WM</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Serial Number</label>
+                        <input type="text" id="new-mach-serial" class="input-control" placeholder="e.g. BMD3-9982">
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select id="new-mach-dept" class="input-control">
+                            <option value="Wafer Prep">Wafer Prep</option>
+                            <option value="Packaging">Packaging</option>
+                            <option value="R&D">R&D</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Rated Life Limit (hrs)</label>
+                        <input type="number" id="new-mach-rated" class="input-control" value="25000">
+                    </div>
+                    <div class="form-group">
+                        <label>Initial Laser Hour (hrs)</label>
+                        <input type="number" id="new-mach-current" class="input-control" value="0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-modal" class="btn btn-secondary">Cancel</button>
+                <button id="btn-submit-machine" class="btn btn-primary">Add Machine</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         MODAL: EDIT MACHINE
+    ===================================================== -->
+    <div id="edit-modal-overlay" class="modal-overlay">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3>Edit Laser Driller Machine</h3>
+                <button id="btn-close-edit-modal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-mach-id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Machine No</label>
+                        <input type="text" id="edit-mach-no" class="input-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Model</label>
+                        <select id="edit-mach-model" class="input-control">
+                            <option value="BMD302W">BMD302W</option>
+                            <option value="BMD250WM">BMD250WM</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Serial Number</label>
+                        <input type="text" id="edit-mach-serial" class="input-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select id="edit-mach-dept" class="input-control">
+                            <option value="Wafer Prep">Wafer Prep</option>
+                            <option value="Packaging">Packaging</option>
+                            <option value="R&D">R&D</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Rated Life Limit (hrs)</label>
+                        <input type="number" id="edit-mach-rated" class="input-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Baseline Laser Hour (hrs)</label>
+                        <input type="number" id="edit-mach-base-hour" class="input-control">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-edit-modal" class="btn btn-secondary">Cancel</button>
+                <button id="btn-submit-edit-machine" class="btn btn-primary">Save Machine</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         MODAL: ENGINEER MODE AUTHENTICATION
+    ===================================================== -->
+    <div id="mode-modal-overlay" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:420px;">
+            <div class="modal-header">
+                <h3 id="mode-modal-title">Engineer Access Authentication</h3>
+                <button id="btn-close-mode-modal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:14px; color:var(--muted);" id="mode-modal-desc">
+                    Please enter the Engineer Password to unlock full configuration, recalibration, and editing access.
+                </p>
+                <div class="form-group" style="margin-top:14px;">
+                    <label>Engineer Password</label>
+                    <input type="password" id="input-mode-password" class="input-control" placeholder="Enter password (default: 1234)">
+                    <div id="mode-password-error" style="color:var(--red); font-size:13px; margin-top:6px; display:none;">
+                        Incorrect password. Please try again.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-mode-modal" class="btn btn-secondary">Cancel</button>
+                <button id="btn-submit-mode-auth" class="btn btn-primary">Unlock Engineer Mode</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ES6 Application Script -->
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
