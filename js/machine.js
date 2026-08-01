@@ -5,6 +5,7 @@ import { LaserEngine } from './laserEngine.js';
 import { ChartRenderer } from './charts.js';
 import { StorageService } from './storage.js';
 import { UI } from './ui.js';
+import { formatDate } from './utils.js';
 
 export const MachineController = {
     /**
@@ -43,7 +44,7 @@ export const MachineController = {
         if (infoSerial) infoSerial.textContent = machine.serialNo;
         if (infoDept) infoDept.textContent = machine.department;
         if (infoRated) infoRated.textContent = `${machine.ratedLife || 25000} hrs`;
-        if (infoBaseDate) infoBaseDate.textContent = machine.baseTimestamp ? new Date(machine.baseTimestamp).toLocaleDateString() : 'N/A';
+        if (infoBaseDate) infoBaseDate.textContent = machine.baseTimestamp ? formatDate(machine.baseTimestamp) : 'N/A';
 
         // EOL Date Card
         const machEol = document.getElementById('mach-eol-date');
@@ -435,7 +436,11 @@ export const MachineController = {
         }
 
         // Sort descending by date
-        allHistory.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+        allHistory.sort((a, b) => {
+            const timeA = new Date(a.date || 0).getTime() || 0;
+            const timeB = new Date(b.date || 0).getTime() || 0;
+            return timeB - timeA;
+        });
 
         allHistory.forEach(rec => {
             const tr = document.createElement('tr');
@@ -445,7 +450,15 @@ export const MachineController = {
                     dateStr = `${rec.date} ${rec.time}`;
                 } else if (rec.date.includes('T')) {
                     const d = new Date(rec.date);
-                    dateStr = `${d.toISOString().split('T')[0]} ${d.toTimeString().split(' ')[0].substring(0, 5)}`;
+                    if (!isNaN(d.getTime())) {
+                        try {
+                            dateStr = `${d.toISOString().split('T')[0]} ${d.toTimeString().split(' ')[0].substring(0, 5)}`;
+                        } catch (e) {
+                            dateStr = rec.date;
+                        }
+                    } else {
+                        dateStr = rec.date;
+                    }
                 } else {
                     dateStr = rec.date;
                 }

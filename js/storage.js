@@ -217,7 +217,9 @@ export const StorageService = {
                 const rated = Number(m.ratedLife) || 25000;
                 const warn = Number(m.warningLife) || Math.floor(rated * 0.8);
                 const baseHour = typeof m.baseLaserHour === 'number' ? m.baseLaserHour : (Number(m.prevHour) || 0);
-                let baseTs = m.baseTimestamp || (m.prevDate ? new Date(m.prevDate).toISOString() : new Date().toISOString());
+                let baseTs = (m.baseTimestamp && !isNaN(new Date(m.baseTimestamp).getTime()))
+                    ? m.baseTimestamp
+                    : ((m.prevDate && !isNaN(new Date(m.prevDate).getTime())) ? new Date(m.prevDate).toISOString() : new Date().toISOString());
 
                 lasers = [{
                     id: `${id}-L1`,
@@ -236,7 +238,7 @@ export const StorageService = {
                     const lRated = Number(laser.ratedLife) || 25000;
                     const lWarn = Number(laser.warningLife) || Math.floor(lRated * 0.8);
                     const lBase = typeof laser.baseLaserHour === 'number' ? laser.baseLaserHour : 0;
-                    const lTs = laser.baseTimestamp || new Date().toISOString();
+                    const lTs = (laser.baseTimestamp && !isNaN(new Date(laser.baseTimestamp).getTime())) ? laser.baseTimestamp : new Date().toISOString();
 
                     return {
                         id: laser.id || `${id}-L${idx + 1}`,

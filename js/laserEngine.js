@@ -186,11 +186,17 @@ export const LaserEngine = {
      * Calculate suggested next recalibration date (30 days from last recalibration).
      */
     calculateNextRecalibrationDate(lastRecalibrationDate) {
+        if (!lastRecalibrationDate) return new Date().toISOString().split('T')[0];
         const recalDate = new Date(lastRecalibrationDate);
         if (isNaN(recalDate.getTime())) return new Date().toISOString().split('T')[0];
         const nextDate = new Date(recalDate);
         nextDate.setDate(nextDate.getDate() + 30);
-        return nextDate.toISOString().split('T')[0];
+        if (isNaN(nextDate.getTime())) return new Date().toISOString().split('T')[0];
+        try {
+            return nextDate.toISOString().split('T')[0];
+        } catch (e) {
+            return new Date().toISOString().split('T')[0];
+        }
     },
 
     /**
@@ -198,12 +204,19 @@ export const LaserEngine = {
      */
     calculateEstimatedEndOfLifeDate(currentHour, ratedLife, currentTime) {
         const remainingHours = this.calculateRemainingHours(currentHour, ratedLife);
-        const now = new Date(currentTime);
+        let now = currentTime ? new Date(currentTime) : new Date();
+        if (isNaN(now.getTime())) now = new Date();
         if (remainingHours <= 0) {
             return 'EXCEEDED';
         }
         const eolMs = now.getTime() + (remainingHours * 3600 * 1000);
-        return new Date(eolMs).toISOString().split('T')[0];
+        const eolDate = new Date(eolMs);
+        if (isNaN(eolDate.getTime())) return 'N/A';
+        try {
+            return eolDate.toISOString().split('T')[0];
+        } catch (e) {
+            return 'N/A';
+        }
     },
 
     /**
@@ -248,9 +261,12 @@ export const LaserEngine = {
      * Calculate metrics for an individual laser head.
      */
     calculateLaserMetrics(laser, currentTime) {
-        const now = currentTime ? new Date(currentTime) : new Date();
+        let now = currentTime ? new Date(currentTime) : new Date();
+        if (isNaN(now.getTime())) now = new Date();
         const baseHour = Number(laser.baseLaserHour) || 0;
-        const baseTs = laser.baseTimestamp || now.toISOString();
+        const baseTs = (laser.baseTimestamp && !isNaN(new Date(laser.baseTimestamp).getTime()))
+            ? laser.baseTimestamp
+            : now.toISOString();
         const ratedLife = Number(laser.ratedLife) || 25000;
         const warningLife = Number(laser.warningLife) || 20000;
         const contingencyCeiling = Number(laser.contingencyCeiling) || (ratedLife + 3000);
@@ -316,7 +332,8 @@ export const LaserEngine = {
      * Uses "WORST STATE WINS" logic (ALARM > WARNING > SAFE) for overall machine status.
      */
     calculateMachineMetrics(machine, currentTime) {
-        const now = currentTime ? new Date(currentTime) : new Date();
+        let now = currentTime ? new Date(currentTime) : new Date();
+        if (isNaN(now.getTime())) now = new Date();
 
         // Check if machine has lasers array
         let lasers = Array.isArray(machine.lasers) && machine.lasers.length > 0 ? machine.lasers : [];
@@ -330,8 +347,8 @@ export const LaserEngine = {
                 ratedLife: Number(machine.ratedLife) || 25000,
                 warningLife: Number(machine.warningLife) || Math.floor((Number(machine.ratedLife) || 25000) * 0.8),
                 baseLaserHour: Number(machine.baseLaserHour) || 0,
-                baseTimestamp: machine.baseTimestamp || now.toISOString(),
-                lastRecalibrationDate: machine.lastRecalibrationDate || now.toISOString(),
+                baseTimestamp: (machine.baseTimestamp && !isNaN(new Date(machine.baseTimestamp).getTime())) ? machine.baseTimestamp : now.toISOString(),
+                lastRecalibrationDate: (machine.lastRecalibrationDate && !isNaN(new Date(machine.lastRecalibrationDate).getTime())) ? machine.lastRecalibrationDate : now.toISOString(),
                 calibrationHistory: Array.isArray(machine.calibrationHistory) ? machine.calibrationHistory : []
             };
             lasers = [fallbackLaser];
@@ -406,7 +423,8 @@ export const LaserEngine = {
      * Perform Recalibration logic for a specific laser head in a machine.
      */
     executeRecalibration(machine, laserId, actualHour, reason, timestamp) {
-        const recalTime = timestamp ? new Date(timestamp) : new Date();
+        let recalTime = timestamp ? new Date(timestamp) : new Date();
+        if (isNaN(recalTime.getTime())) recalTime = new Date();
         const recalISO = recalTime.toISOString();
 
         const lasers = Array.isArray(machine.lasers) ? [...machine.lasers] : [];
@@ -421,8 +439,16 @@ export const LaserEngine = {
         const diff = this.calculateDeviation(actualHour, currentEstimated);
         const ratingInfo = this.calculateDeviationRating(diff);
 
-        const dateStr = recalTime.toISOString().split('T')[0];
-        const timeStr = recalTime.toTimeString().split(' ')[0].substring(0, 5);
+        let dateStr = 'N/A';
+        let timeStr = '00:00';
+        try {
+            dateStr = recalTime.toISOString().split('T')[0];
+            timeStr = recalTime.toTimeString().split(' ')[0].substring(0, 5);
+        } catch (e) {
+            const fallback = new Date();
+            dateStr = fallback.toISOString().split('T')[0];
+            timeStr = fallback.toTimeString().split(' ')[0].substring(0, 5);
+        }
 
         const historyRecord = {
             date: dateStr,

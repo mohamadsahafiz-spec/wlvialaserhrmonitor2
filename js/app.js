@@ -7,7 +7,7 @@ import { DashboardController } from './dashboard.js';
 import { MachineController } from './machine.js';
 import { RecalibrationController } from './recalibration.js';
 import { UI } from './ui.js';
-import { getCurrentEvalTime, getQueryParam, setQueryParam } from './utils.js';
+import { getCurrentEvalTime, getQueryParam, setQueryParam, safeToISOString, safeToDatetimeLocal } from './utils.js';
 
 const AppState = {
     machines: [],
@@ -403,7 +403,7 @@ function showMachineDetail(id, cardElement) {
     if (DOM.detRated) DOM.detRated.value = machine.ratedLife;
 
     if (DOM.prevHour) DOM.prevHour.value = machine.baseLaserHour;
-    if (DOM.prevDate) DOM.prevDate.value = new Date(machine.baseTimestamp).toISOString().slice(0, 16);
+    if (DOM.prevDate) DOM.prevDate.value = safeToDatetimeLocal(machine.baseTimestamp);
 
     const evalTime = getEvalTime();
     MachineController.renderMaintenanceLog(machine, DOM.maintTbody);
@@ -523,7 +523,7 @@ function setupEventListeners() {
         requireEngineerMode(() => {
             const machine = AppState.machines.find(m => m.id === AppState.currentMachineId);
             if (machine && DOM.prevDate.value) {
-                machine.baseTimestamp = new Date(DOM.prevDate.value).toISOString();
+                machine.baseTimestamp = safeToISOString(DOM.prevDate.value);
                 MachineController.renderSingleDashboard(machine, DOM, getEvalTime());
             }
         });
@@ -624,7 +624,7 @@ function setupEventListeners() {
                 id: machine.id + '-L1',
                 name: 'Laser Head 1',
                 baseLaserHour: machine.baseLaserHour || 0,
-                baseTimestamp: machine.baseTimestamp || new Date().toISOString()
+                baseTimestamp: safeToISOString(machine.baseTimestamp)
             }];
 
             if (DOM.recalLaserSelect) {
@@ -636,7 +636,7 @@ function setupEventListeners() {
                 const targetId = DOM.recalLaserSelect ? DOM.recalLaserSelect.value : (laserId || lasers[0].id);
                 const targetLaser = lasers.find(l => l.id === targetId) || lasers[0];
                 const evalTime = getEvalTime();
-                const est = LaserEngine.calculateEstimatedHour(targetLaser.baseLaserHour || 0, targetLaser.baseTimestamp || new Date().toISOString(), evalTime);
+                const est = LaserEngine.calculateEstimatedHour(targetLaser.baseLaserHour || 0, safeToISOString(targetLaser.baseTimestamp), evalTime);
 
                 if (DOM.recalCurrentEstDisplay) DOM.recalCurrentEstDisplay.value = `${Math.round(est * 10) / 10} hrs`;
                 if (DOM.recalActualInput) DOM.recalActualInput.value = Math.round(est);
@@ -806,7 +806,7 @@ function setupEventListeners() {
                 }
                 if (DOM.prevHour) machine.baseLaserHour = Number(DOM.prevHour.value) || 0;
                 if (DOM.prevDate && DOM.prevDate.value) {
-                    machine.baseTimestamp = new Date(DOM.prevDate.value).toISOString();
+                    machine.baseTimestamp = safeToISOString(DOM.prevDate.value);
                 }
 
                 StorageService.saveMachine(machine);
@@ -905,7 +905,7 @@ function setupEventListeners() {
         const m = AppState.machines.find(item => item.id === AppState.currentMachineId);
         if (m) {
             if (DOM.prevHour) DOM.prevHour.value = m.baseLaserHour;
-            if (DOM.prevDate) DOM.prevDate.value = new Date(m.baseTimestamp).toISOString().slice(0, 16);
+            if (DOM.prevDate) DOM.prevDate.value = safeToDatetimeLocal(m.baseTimestamp);
             MachineController.renderCalibrationHistory(m, DOM.calibrationTbody);
             MachineController.renderSingleDashboard(m, DOM, getEvalTime());
         }

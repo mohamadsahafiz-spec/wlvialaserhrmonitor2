@@ -3,6 +3,7 @@
    ===================================================== */
 import { LaserEngine } from './laserEngine.js';
 import { ChartRenderer } from './charts.js';
+import { formatDate } from './utils.js';
 
 export const DashboardController = {
     /**
@@ -101,10 +102,16 @@ export const DashboardController = {
                     const statusOrder = { 'ALARM': 0, 'WARNING': 1, 'SAFE': 2 };
                     return (statusOrder[metricsA.status] ?? 3) - (statusOrder[metricsB.status] ?? 3);
                 }
-                case 'recal-newest':
-                    return new Date(metricsB.lastRecalibrationDate).getTime() - new Date(metricsA.lastRecalibrationDate).getTime();
-                case 'recal-oldest':
-                    return new Date(metricsA.lastRecalibrationDate).getTime() - new Date(metricsB.lastRecalibrationDate).getTime();
+                case 'recal-newest': {
+                    const tA = new Date(metricsA.lastRecalibrationDate || 0).getTime() || 0;
+                    const tB = new Date(metricsB.lastRecalibrationDate || 0).getTime() || 0;
+                    return tB - tA;
+                }
+                case 'recal-oldest': {
+                    const tA = new Date(metricsA.lastRecalibrationDate || 0).getTime() || 0;
+                    const tB = new Date(metricsB.lastRecalibrationDate || 0).getTime() || 0;
+                    return tA - tB;
+                }
                 default:
                     return 0;
             }
@@ -166,7 +173,7 @@ export const DashboardController = {
             const crit = metrics.mostCriticalLaser;
             const formatHrs = Math.abs(crit.remainingTotal);
             const remainText = crit.remainingTotal < 0 ? `-${formatHrs} hrs` : `${formatHrs} hrs`;
-            const recalDateStr = crit.lastRecalibrationDate ? new Date(crit.lastRecalibrationDate).toLocaleDateString() : 'N/A';
+            const recalDateStr = crit.lastRecalibrationDate ? formatDate(crit.lastRecalibrationDate) : 'N/A';
             const remDaysText = crit.isContingencyActive ? 'EXCEEDED' : crit.remainingDaysInfo.formattedText;
             const lifeRemainingDisplay = crit.isContingencyActive ? '0%' : crit.formattedLifeRemaining;
             const lifeRemainingPct = crit.isContingencyActive ? 0 : crit.lifeRemainingPercent;

@@ -10,14 +10,35 @@ export function formatHours(val) {
     return String(Math.round(num));
 }
 
+export function safeToISOString(val, fallback = new Date().toISOString()) {
+    if (!val) return fallback;
+    try {
+        const date = new Date(val);
+        if (isNaN(date.getTime())) return fallback;
+        return date.toISOString();
+    } catch (e) {
+        return fallback;
+    }
+}
+
+export function safeToDatetimeLocal(val, fallback = '') {
+    const iso = safeToISOString(val, null);
+    if (!iso) return fallback;
+    return iso.slice(0, 16);
+}
+
 /**
  * Format ISO date string to localized date string (YYYY-MM-DD).
  */
 export function formatDate(isoString) {
     if (!isoString) return 'N/A';
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return 'N/A';
-    return date.toLocaleDateString();
+    try {
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return 'N/A';
+        return date.toLocaleDateString();
+    } catch (e) {
+        return 'N/A';
+    }
 }
 
 /**
@@ -25,9 +46,13 @@ export function formatDate(isoString) {
  */
 export function formatDateTime(isoString) {
     if (!isoString) return 'N/A';
-    const date = new Date(isoString);
-    if (isNaN(date.getTime())) return 'N/A';
-    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    try {
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) return 'N/A';
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+        return 'N/A';
+    }
 }
 
 /**
