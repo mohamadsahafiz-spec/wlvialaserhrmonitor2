@@ -889,6 +889,34 @@
         </div>
     </div>
 
+    <!-- =====================================================
+         MODAL: DELETE LASER HEAD CONFIRMATION
+    ===================================================== -->
+    <div id="delete-laser-modal-overlay" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:440px;">
+            <div class="modal-header">
+                <h3>DELETE LASER HEAD?</h3>
+                <button id="btn-close-delete-laser-modal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size:14px; color:var(--text); margin-bottom:12px;">
+                    You are about to remove:
+                </p>
+                <div style="padding:12px 16px; background:rgba(239, 68, 68, 0.1); border:1px solid rgba(239, 68, 68, 0.3); border-radius:8px; margin-bottom:14px;">
+                    <div id="delete-laser-target-name" style="font-weight:700; font-size:15px; color:var(--red);">Laser Head #2</div>
+                    <div id="delete-laser-target-serial" style="font-size:12px; color:var(--muted); margin-top:2px;">SN: MC23006</div>
+                </div>
+                <p style="font-size:13px; color:var(--muted); line-height:1.4;">
+                    This action removes this laser configuration and its associated local monitoring history.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel-delete-laser-modal" class="btn btn-secondary">Cancel</button>
+                <button id="btn-confirm-delete-laser" class="btn btn-danger" style="background:var(--red); border-color:var(--red); color:#fff; font-weight:700;">Delete Laser</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ES6 Application Script -->
     <script type="module" src="js/app.js"></script>
 </body>
