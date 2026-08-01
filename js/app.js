@@ -118,6 +118,14 @@ function initDOM() {
         laserModalContingency: document.getElementById('laser-modal-contingency'),
         laserModalPreviewText: document.getElementById('laser-modal-preview-text'),
 
+        // Delete Laser Modal
+        deleteLaserOverlay: document.getElementById('delete-laser-modal-overlay'),
+        btnCloseDeleteLaserModal: document.getElementById('btn-close-delete-laser-modal'),
+        btnCancelDeleteLaserModal: document.getElementById('btn-cancel-delete-laser-modal'),
+        btnConfirmDeleteLaser: document.getElementById('btn-confirm-delete-laser'),
+        deleteLaserTargetName: document.getElementById('delete-laser-target-name'),
+        deleteLaserTargetSerial: document.getElementById('delete-laser-target-serial'),
+
         // Deviation Analysis Modal
         deviationOverlay: document.getElementById('deviation-modal-overlay'),
         btnCloseDevModal: document.getElementById('btn-close-dev-modal'),
@@ -415,6 +423,128 @@ function showMachineDetail(id, cardElement) {
     MachineController.renderSingleDashboard(machine, DOM, evalTime, false, getMachineCallbacks());
 }
 
+let pendingDeleteTarget = null;
+
+const updateLaserModalPreview = () => {
+    if (!DOM.laserModalPreviewText) return;
+    const hourVal = DOM.laserModalBaseHour ? DOM.laserModalBaseHour.value : '';
+    const tsVal = DOM.laserModalTimestamp ? DOM.laserModalTimestamp.value : '';
+    const evalTime = getEvalTime();
+
+    if (hourVal === '' || !tsVal) {
+        DOM.laserModalPreviewText.textContent = `⚠️ Baseline Required: Record captured hour & date/time to establish baseline.`;
+        return;
+    }
+
+    const baseHour = Number(hourVal) || 0;
+    const baseMs = new Date(tsVal).getTime();
+    const evalMs = evalTime.getTime();
+
+    if (isNaN(baseMs)) {
+        DOM.laserModalPreviewText.textContent = `⚠️ Baseline Required: Invalid timestamp format.`;
+        return;
+    }
+
+    const elapsedMs = Math.max(0, evalMs - baseMs);
+    const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24);
+    const elapsedHours = elapsedMs / (1000 * 60 * 60);
+    const estNow = baseHour + elapsedHours;
+
+    DOM.laserModalPreviewText.textContent = `Estimated now: ${estNow.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} hrs (${elapsedDays.toFixed(1)} days elapsed)`;
+};
+
+const openRecalibrateModalForLaser = (mId, laserId) => {
+    requireEngineerMode(() => {
+        const machine = AppState.machines.find(m => m.id === (mId || AppState.currentMachineId));
+        if (!machine) return;
+
+        const lasers = Array.isArray(machine.lasers) && machine.lasers.length > 0 ? machine.lasers : [{
+            id: machine.id + '-L1',
+            name: 'Laser Head 1',
+            baseLaserHour: machine.baseLaserHour || 0,
+            baseTimestamp: safeToISOString(machine.baseTimestamp)
+        }];
+
+        if (DOM.recalLaserSelect) {
+            DOM.recalLaserSelect.innerHTML = lasers.map(l => `<option value="${l.id}">${l.name || 'Laser Head'} (${l.serialNo || 'SN-N/A'})</option>`).join('');
+            if (laserId) DOM.recalLaserSelect.value = laserId;
+        }
+
+        const updateEstForSelectedLaser = () => {
+            const targetId = DOM.recalLaserSelect ? DOM.recalLaserSelect.value : (laserId || lasers[0].id);
+            const targetLaser = lasers.find(l => l.id === targetId) || lasers[0];
+            const evalTime = getEvalTime();
+            const est = LaserEngine.calculateEstimatedHour(targetLaser.baseLaserHour || 0, safeToISOString(targetLaser.baseTimestamp), evalTime);
+
+            if (DOM.recalCurrentEstDisplay) DOM.recalCurrentEstDisplay.value = `${Math.round(est * 10) / 10} hrs`;
+            if (DOM.recalActualInput) DOM.recalActualInput.value = Math.round(est);
+        };
+
+        updateEstForSelectedLaser();
+
+        if (DOM.recalLaserSelect) {
+            DOM.recalLaserSelect.onchange = updateEstForSelectedLaser;
+        }
+
+        if (DOM.recalReasonSelect) DOM.recalReasonSelect.value = 'Manual Verification';
+        UI.showModal(DOM.recalOverlay);
+    });
+};
+
+const openEditLaserModal = (mId, laserId) => {
+    requireEngineerMode(() => {
+        const machine = AppState.machines.find(m => m.id === (mId || AppState.currentMachineId));
+        if (!machine || !Array.isArray(machine.lasers)) return;
+
+        const laser = machine.lasers.find(l => l.id === laserId);
+        if (!laser) return;
+
+        const isBaselineReq = !laser.baseTimestamp || isNaN(new Date(laser.baseTimestamp).getTime()) || laser.baseLaserHour === null || laser.baseLaserHour === undefined;
+
+        if (DOM.laserModalTitle) DOM.laserModalTitle.textContent = isBaselineReq ? `Set Baseline - ${laser.name}` : `Edit ${laser.name}`;
+        if (DOM.laserModalId) DOM.laserModalId.value = laser.id;
+        if (DOM.laserModalName) DOM.laserModalName.value = laser.name || '';
+        if (DOM.laserModalSerial) DOM.laserModalSerial.value = laser.serialNo || '';
+        if (DOM.laserModalBaseHour) DOM.laserModalBaseHour.value = (typeof laser.baseLaserHour === 'number' && !isNaN(laser.baseLaserHour)) ? laser.baseLaserHour : '';
+        if (DOM.laserModalTimestamp) DOM.laserModalTimestamp.value = safeToDatetimeLocal(laser.baseTimestamp, '');
+        if (DOM.laserModalWarning) DOM.laserModalWarning.value = laser.warningLife || 20000;
+        if (DOM.laserModalRated) DOM.laserModalRated.value = laser.ratedLife || 25000;
+        if (DOM.laserModalContingency) DOM.laserModalContingency.value = laser.contingencyCeiling || 28000;
+
+        updateLaserModalPreview();
+        UI.showModal(DOM.laserModalOverlay);
+    });
+};
+
+const handleDeleteLaserHead = (mId, laserId) => {
+    requireEngineerMode(() => {
+        const machine = AppState.machines.find(m => m.id === (mId || AppState.currentMachineId));
+        if (!machine || !Array.isArray(machine.lasers) || machine.lasers.length <= 1) {
+            UI.showToast('Machine must maintain at least 1 Laser Head unit.', 'error');
+            return;
+        }
+
+        const targetLaser = machine.lasers.find(l => l.id === laserId);
+        if (!targetLaser) return;
+
+        pendingDeleteTarget = {
+            machineId: machine.id,
+            laserId: targetLaser.id,
+            laserName: targetLaser.name
+        };
+
+        if (DOM.deleteLaserTargetName) DOM.deleteLaserTargetName.textContent = targetLaser.name || 'Laser Head';
+        if (DOM.deleteLaserTargetSerial) DOM.deleteLaserTargetSerial.textContent = `SN: ${targetLaser.serialNo || 'N/A'}`;
+
+        UI.showModal(DOM.deleteLaserOverlay);
+    });
+};
+
+const closeDeleteLaserModal = () => {
+    pendingDeleteTarget = null;
+    UI.hideModal(DOM.deleteLaserOverlay);
+};
+
 function getMachineCallbacks() {
     return {
         onRecalibrateLaser: (mId, laserId) => openRecalibrateModalForLaser(mId, laserId),
@@ -422,6 +552,7 @@ function getMachineCallbacks() {
         onDeleteLaser: (mId, laserId) => handleDeleteLaserHead(mId, laserId)
     };
 }
+window.getMachineCallbacks = getMachineCallbacks;
 
 function showSettingsView() {
     if (DOM.viewFleet) DOM.viewFleet.classList.add('hidden');
@@ -619,122 +750,67 @@ function setupEventListeners() {
     }
 
     // Secondary Action Triggers
-    const openRecalibrateModalForLaser = (mId, laserId) => {
-        requireEngineerMode(() => {
-            const machine = AppState.machines.find(m => m.id === (mId || AppState.currentMachineId));
-            if (!machine) return;
-
-            const lasers = Array.isArray(machine.lasers) && machine.lasers.length > 0 ? machine.lasers : [{
-                id: machine.id + '-L1',
-                name: 'Laser Head 1',
-                baseLaserHour: machine.baseLaserHour || 0,
-                baseTimestamp: safeToISOString(machine.baseTimestamp)
-            }];
-
-            if (DOM.recalLaserSelect) {
-                DOM.recalLaserSelect.innerHTML = lasers.map(l => `<option value="${l.id}">${l.name || 'Laser Head'} (${l.serialNo || 'SN-N/A'})</option>`).join('');
-                if (laserId) DOM.recalLaserSelect.value = laserId;
-            }
-
-            const updateEstForSelectedLaser = () => {
-                const targetId = DOM.recalLaserSelect ? DOM.recalLaserSelect.value : (laserId || lasers[0].id);
-                const targetLaser = lasers.find(l => l.id === targetId) || lasers[0];
-                const evalTime = getEvalTime();
-                const est = LaserEngine.calculateEstimatedHour(targetLaser.baseLaserHour || 0, safeToISOString(targetLaser.baseTimestamp), evalTime);
-
-                if (DOM.recalCurrentEstDisplay) DOM.recalCurrentEstDisplay.value = `${Math.round(est * 10) / 10} hrs`;
-                if (DOM.recalActualInput) DOM.recalActualInput.value = Math.round(est);
-            };
-
-            updateEstForSelectedLaser();
-
-            if (DOM.recalLaserSelect) {
-                DOM.recalLaserSelect.onchange = updateEstForSelectedLaser;
-            }
-
-            if (DOM.recalReasonSelect) DOM.recalReasonSelect.value = 'Manual Verification';
-            UI.showModal(DOM.recalOverlay);
-        });
-    };
-
-    const updateLaserModalPreview = () => {
-        if (!DOM.laserModalPreviewText) return;
-        const hourVal = DOM.laserModalBaseHour ? DOM.laserModalBaseHour.value : '';
-        const tsVal = DOM.laserModalTimestamp ? DOM.laserModalTimestamp.value : '';
-        const evalTime = getEvalTime();
-
-        if (hourVal === '' || !tsVal) {
-            DOM.laserModalPreviewText.textContent = `⚠️ Baseline Required: Record captured hour & date/time to establish baseline.`;
-            return;
-        }
-
-        const baseHour = Number(hourVal) || 0;
-        const baseMs = new Date(tsVal).getTime();
-        const evalMs = evalTime.getTime();
-
-        if (isNaN(baseMs)) {
-            DOM.laserModalPreviewText.textContent = `⚠️ Baseline Required: Invalid timestamp format.`;
-            return;
-        }
-
-        const elapsedMs = Math.max(0, evalMs - baseMs);
-        const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24);
-        const elapsedHours = elapsedMs / (1000 * 60 * 60);
-        const estNow = baseHour + elapsedHours;
-
-        DOM.laserModalPreviewText.textContent = `Estimated now: ${estNow.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} hrs (${elapsedDays.toFixed(1)} days elapsed)`;
-    };
-
     if (DOM.laserModalBaseHour) DOM.laserModalBaseHour.addEventListener('input', updateLaserModalPreview);
     if (DOM.laserModalTimestamp) DOM.laserModalTimestamp.addEventListener('input', updateLaserModalPreview);
 
-    const openEditLaserModal = (mId, laserId) => {
-        requireEngineerMode(() => {
-            const machine = AppState.machines.find(m => m.id === (mId || AppState.currentMachineId));
-            if (!machine || !Array.isArray(machine.lasers)) return;
+    if (DOM.btnCloseDeleteLaserModal) DOM.btnCloseDeleteLaserModal.addEventListener('click', closeDeleteLaserModal);
+    if (DOM.btnCancelDeleteLaserModal) DOM.btnCancelDeleteLaserModal.addEventListener('click', closeDeleteLaserModal);
 
-            const laser = machine.lasers.find(l => l.id === laserId);
-            if (!laser) return;
+    if (DOM.btnConfirmDeleteLaser) {
+        DOM.btnConfirmDeleteLaser.addEventListener('click', () => {
+            if (!pendingDeleteTarget) return;
 
-            const isBaselineReq = !laser.baseTimestamp || isNaN(new Date(laser.baseTimestamp).getTime()) || laser.baseLaserHour === null || laser.baseLaserHour === undefined;
-
-            if (DOM.laserModalTitle) DOM.laserModalTitle.textContent = isBaselineReq ? `Set Baseline - ${laser.name}` : `Edit ${laser.name}`;
-            if (DOM.laserModalId) DOM.laserModalId.value = laser.id;
-            if (DOM.laserModalName) DOM.laserModalName.value = laser.name || '';
-            if (DOM.laserModalSerial) DOM.laserModalSerial.value = laser.serialNo || '';
-            if (DOM.laserModalBaseHour) DOM.laserModalBaseHour.value = (typeof laser.baseLaserHour === 'number' && !isNaN(laser.baseLaserHour)) ? laser.baseLaserHour : '';
-            if (DOM.laserModalTimestamp) DOM.laserModalTimestamp.value = safeToDatetimeLocal(laser.baseTimestamp, '');
-            if (DOM.laserModalWarning) DOM.laserModalWarning.value = laser.warningLife || 20000;
-            if (DOM.laserModalRated) DOM.laserModalRated.value = laser.ratedLife || 25000;
-            if (DOM.laserModalContingency) DOM.laserModalContingency.value = laser.contingencyCeiling || 28000;
-
-            updateLaserModalPreview();
-            UI.showModal(DOM.laserModalOverlay);
-        });
-    };
-
-    const handleDeleteLaserHead = (mId, laserId) => {
-        requireEngineerMode(() => {
-            const machine = AppState.machines.find(m => m.id === (mId || AppState.currentMachineId));
+            const { machineId, laserId, laserName } = pendingDeleteTarget;
+            const machine = AppState.machines.find(m => m.id === machineId);
             if (!machine || !Array.isArray(machine.lasers) || machine.lasers.length <= 1) {
                 UI.showToast('Machine must maintain at least 1 Laser Head unit.', 'error');
+                closeDeleteLaserModal();
                 return;
             }
 
-            const targetLaser = machine.lasers.find(l => l.id === laserId);
-            const lname = targetLaser ? targetLaser.name : 'this laser head';
+            machine.lasers = machine.lasers.filter(l => l.id !== laserId);
+            StorageService.saveMachine(machine);
+            AppState.machines = StorageService.loadMachines();
+            closeDeleteLaserModal();
+            UI.showToast(`Removed ${laserName} ✓`, 'warning');
 
-            if (confirm(`Remove ${lname}? This action cannot be undone.`)) {
-                machine.lasers = machine.lasers.filter(l => l.id !== laserId);
-                StorageService.saveMachine(machine);
-                AppState.machines = StorageService.loadMachines();
-                UI.showToast(`Removed ${lname} ✓`, 'warning');
-
+            const updatedMachine = AppState.machines.find(m => m.id === machineId);
+            if (updatedMachine) {
                 const evalTime = getEvalTime();
-                MachineController.renderSingleDashboard(machine, DOM, evalTime, false, getMachineCallbacks());
+                MachineController.renderSingleDashboard(updatedMachine, DOM, evalTime, false, getMachineCallbacks());
             }
         });
-    };
+    }
+
+    // Event delegation for Laser Head Card action buttons
+    const laserHeadsGrid = document.getElementById('laser-heads-grid');
+    if (laserHeadsGrid) {
+        laserHeadsGrid.addEventListener('click', (e) => {
+            const recalBtn = e.target.closest('.btn-recal-laser');
+            if (recalBtn) {
+                e.preventDefault();
+                const laserId = recalBtn.getAttribute('data-laser-id');
+                openRecalibrateModalForLaser(AppState.currentMachineId, laserId);
+                return;
+            }
+
+            const editBtn = e.target.closest('.btn-edit-laser');
+            if (editBtn) {
+                e.preventDefault();
+                const laserId = editBtn.getAttribute('data-laser-id');
+                openEditLaserModal(AppState.currentMachineId, laserId);
+                return;
+            }
+
+            const deleteBtn = e.target.closest('.btn-delete-laser');
+            if (deleteBtn && !deleteBtn.disabled) {
+                e.preventDefault();
+                const laserId = deleteBtn.getAttribute('data-laser-id');
+                handleDeleteLaserHead(AppState.currentMachineId, laserId);
+                return;
+            }
+        });
+    }
 
     if (DOM.btnOpenRecalibrate) DOM.btnOpenRecalibrate.addEventListener('click', () => openRecalibrateModalForLaser());
 
