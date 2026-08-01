@@ -248,6 +248,59 @@
                 <div class="mach-modal-body">
                     <!-- TAB 1: OVERVIEW -->
                     <div id="tab-overview" class="mach-tab-pane active">
+                        <!-- Warning Operational Banner (Shown during WARNING state) -->
+                        <div id="mach-warning-banner" class="recommendation-banner" style="display: none; margin-bottom: 20px; background: rgba(245, 158, 11, 0.12); border-color: var(--yellow); color: var(--yellow); padding: 14px 18px; font-weight: 700;">
+                            <svg class="icon" viewBox="0 0 24 24" style="width: 18px; height: 18px; stroke: currentColor; vertical-align: middle; margin-right: 8px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <span id="mach-warning-banner-text">REPLACEMENT PLANNING REQUIRED • RECOMMENDED LIFE LIMIT APPROACHING</span>
+                        </div>
+
+                        <!-- AUTOMATIC CONTINGENCY MODE PANEL (Revealed ONLY when Current Laser Hour >= Recommended Lifetime 25,000 hrs) -->
+                        <div id="contingency-mode-panel" class="contingency-panel glass-panel" style="display: none; margin-bottom: 24px; padding: 20px; border: 1px solid var(--red); background: rgba(239, 68, 68, 0.08); border-radius: 14px;">
+                            <div class="contingency-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(239, 68, 68, 0.2); padding-bottom: 14px; margin-bottom: 16px;">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="mc-led bg-alarm led-solid" style="width: 12px; height: 12px; box-shadow: 0 0 12px var(--red);"></div>
+                                    <div>
+                                        <h3 style="margin: 0; color: var(--red); font-size: 17px; font-weight: 800; letter-spacing: 0.3px;">AUTOMATIC CONTINGENCY MODE</h3>
+                                        <div style="font-size: 13px; color: var(--text); font-weight: 700; margin-top: 2px;">RECOMMENDED LASER LIFE EXCEEDED</div>
+                                    </div>
+                                </div>
+                                <span class="badge badge-danger" style="font-size: 11px; padding: 5px 12px; background: rgba(239, 68, 68, 0.25); border: 1px solid var(--red); color: var(--red); font-weight: 800;">ALARM / CONTINGENCY</span>
+                            </div>
+
+                            <div class="contingency-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                                <div class="contingency-card" style="background: var(--input-bg); padding: 12px; border-radius: 10px; border: 1px solid var(--glass-border);">
+                                    <div style="font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Recommended Life</div>
+                                    <div id="cm-recommended-life" style="font-size: 18px; font-weight: 800; color: var(--text); margin-top: 3px;">25,000 hrs</div>
+                                </div>
+                                <div class="contingency-card" style="background: var(--input-bg); padding: 12px; border-radius: 10px; border: 1px solid var(--glass-border);">
+                                    <div style="font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Exceeded By</div>
+                                    <div id="cm-exceeded-by" style="font-size: 18px; font-weight: 800; color: var(--red); margin-top: 3px;">120 hrs</div>
+                                </div>
+                                <div class="contingency-card" style="background: var(--input-bg); padding: 12px; border-radius: 10px; border: 1px solid var(--glass-border);">
+                                    <div style="font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Contingency Margin</div>
+                                    <div id="cm-margin-remaining" style="font-size: 18px; font-weight: 800; color: var(--yellow); margin-top: 3px;">2,880 hrs</div>
+                                </div>
+                                <div class="contingency-card" style="background: var(--input-bg); padding: 12px; border-radius: 10px; border: 1px solid var(--glass-border);">
+                                    <div style="font-size: 10px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Contingency Ceiling</div>
+                                    <div id="cm-ceiling-val" style="font-size: 18px; font-weight: 800; color: var(--text); margin-top: 3px;">28,000 hrs</div>
+                                </div>
+                            </div>
+
+                            <div class="contingency-progress-box" style="margin-bottom: 14px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 6px;">
+                                    <span>Contingency Margin Consumption (25,000 → 28,000 hrs Ceiling)</span>
+                                    <span id="cm-range-pct" style="color: var(--yellow);">4.2% Margin Used</span>
+                                </div>
+                                <div class="progress-track" style="height: 10px; background: rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden;">
+                                    <div id="cm-progress-fill" class="progress-fill" style="width: 4.2%; background: linear-gradient(90deg, var(--yellow), var(--red)); height: 100%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="contingency-notice-box" style="padding: 12px 16px; background: rgba(239, 68, 68, 0.12); border-left: 4px solid var(--red); border-radius: 6px; font-size: 13px; line-height: 1.5; color: #fca5a5;">
+                                <strong>Risk & Engineering Notice:</strong> Extended operation beyond recommended laser lifetime requires contingency planning and customer risk management.
+                            </div>
+                        </div>
+
                         <!-- Primary KPI Dashboard Cards -->
                         <div class="mach-kpi-grid">
                             <div class="mach-kpi-card glass-panel">

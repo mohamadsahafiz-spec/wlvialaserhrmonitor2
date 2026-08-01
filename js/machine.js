@@ -54,10 +54,54 @@ export const MachineController = {
         if (DOM.currentHour) DOM.currentHour.textContent = `${crit.currentHour} hrs`;
         if (DOM.currentAge) DOM.currentAge.textContent = `Critical: ${crit.name}`;
         
-        if (DOM.healthPercent) DOM.healthPercent.textContent = crit.formattedLifeRemaining;
+        if (DOM.healthPercent) {
+            DOM.healthPercent.textContent = crit.isContingencyActive ? '0%' : crit.formattedLifeRemaining;
+        }
+
+        // Warning Operational Banner
+        const warnBanner = document.getElementById('mach-warning-banner');
+        const warnBannerText = document.getElementById('mach-warning-banner-text');
+        if (warnBanner) {
+            if (metrics.status === 'WARNING' && !crit.isContingencyActive) {
+                warnBanner.style.display = 'flex';
+                if (warnBannerText) {
+                    warnBannerText.textContent = `REPLACEMENT PLANNING REQUIRED • RECOMMENDED LIFE LIMIT APPROACHING (${crit.remainingTotal} hrs remaining)`;
+                }
+            } else {
+                warnBanner.style.display = 'none';
+            }
+        }
+
+        // Automatic Contingency Mode Panel
+        const contingencyPanel = document.getElementById('contingency-mode-panel');
+        if (contingencyPanel) {
+            if (crit.isContingencyActive) {
+                contingencyPanel.style.display = 'block';
+
+                const recLifeEl = document.getElementById('cm-recommended-life');
+                const exceededByEl = document.getElementById('cm-exceeded-by');
+                const marginRemainingEl = document.getElementById('cm-margin-remaining');
+                const ceilingValEl = document.getElementById('cm-ceiling-val');
+                const rangePctEl = document.getElementById('cm-range-pct');
+                const progressFillEl = document.getElementById('cm-progress-fill');
+
+                if (recLifeEl) recLifeEl.textContent = `${crit.ratedLife.toLocaleString()} hrs`;
+                if (exceededByEl) exceededByEl.textContent = `${crit.hoursExceeded.toLocaleString()} hrs`;
+                if (marginRemainingEl) marginRemainingEl.textContent = `${crit.contingencyMargin.toLocaleString()} hrs`;
+                if (ceilingValEl) ceilingValEl.textContent = `${crit.contingencyCeiling.toLocaleString()} hrs`;
+
+                const marginSpan = Math.max(1, crit.contingencyCeiling - crit.ratedLife);
+                const usedPct = Math.min(100, Math.max(0, (crit.hoursExceeded / marginSpan) * 100));
+
+                if (rangePctEl) rangePctEl.textContent = `${usedPct.toFixed(1)}% Margin Used`;
+                if (progressFillEl) progressFillEl.style.width = `${usedPct}%`;
+            } else {
+                contingencyPanel.style.display = 'none';
+            }
+        }
 
         this.updateRemainingCardUI(crit, DOM);
-        this.updateStatusCardUI(metrics.status, DOM);
+        this.updateStatusCardUI(metrics.status, DOM, crit);
 
         if (DOM.progressBar) ChartRenderer.updateProgressBar(DOM.progressBar, crit.lifeRemainingPercent);
 
@@ -98,6 +142,13 @@ export const MachineController = {
             const formatHrs = Math.abs(lm.remainingTotal);
             const remainText = lm.remainingTotal < 0 ? `-${formatHrs} hrs` : `${formatHrs} hrs`;
 
+            const contingencyInfoHtml = lm.isContingencyActive ? `
+                <div style="margin-top: 10px; padding: 8px 10px; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--red); border-radius: 6px; font-size: 11px; color: #fca5a5; font-weight: 700; line-height: 1.4;">
+                    <div style="color: var(--red); font-weight: 800; margin-bottom: 2px;">🚨 RECOMMENDED LIFE EXCEEDED</div>
+                    Exceeded By: <strong>${lm.hoursExceeded} hrs</strong> | Contingency Margin: <strong>${lm.contingencyMargin} hrs</strong>
+                </div>
+            ` : '';
+
             card.innerHTML = `
                 <div class="lhc-header">
                     <div>
@@ -132,12 +183,14 @@ export const MachineController = {
                 <div class="lhc-progress-box">
                     <div class="lhc-progress-meta">
                         <span>Life Remaining</span>
-                        <strong style="color:${dotColor}">${lm.formattedLifeRemaining}</strong>
+                        <strong style="color:${dotColor}">${lm.isContingencyActive ? '0%' : lm.formattedLifeRemaining}</strong>
                     </div>
                     <div class="mini-health-track" style="width:100%; height:10px;">
-                        <div class="mini-health-fill" style="width:${lm.lifeRemainingPercent}%; background:${dotColor};"></div>
+                        <div class="mini-health-fill" style="width:${lm.isContingencyActive ? 0 : lm.lifeRemainingPercent}%; background:${dotColor};"></div>
                     </div>
                 </div>
+
+                ${contingencyInfoHtml}
 
                 <div class="lhc-actions">
                     <button class="btn btn-secondary btn-sm btn-recal-laser" data-laser-id="${lm.id}">
@@ -192,8 +245,8 @@ export const MachineController = {
         const remInfo = critMetric.remainingDaysInfo;
         const remainingTotal = critMetric.remainingTotal;
 
-        DOM.remainingHour.className = "value";
-        DOM.remainingCard.className = "card glass-panel";
+        DOM.remainingHour.className = "kpi-value";
+        DOM.remainingCard.className = "mach-kpi-card glass-panel";
         if (DOM.remainingDot) DOM.remainingDot.className = "led";
 
         if (remInfo.urgency === "SAFE") {
@@ -201,7 +254,7 @@ export const MachineController = {
             DOM.remainingCard.classList.add("glow-safe");
             if (DOM.remainingDot) DOM.remainingDot.classList.add("bg-safe", "led-solid");
             if (DOM.remainingText) {
-                DOM.remainingText.className = "color-safe";
+                DOM.remainingText.className = "kpi-status-tag color-safe";
                 DOM.remainingText.textContent = "SAFE";
             }
         } else if (remInfo.urgency === "WARNING") {
@@ -209,7 +262,7 @@ export const MachineController = {
             DOM.remainingCard.classList.add("glow-warning");
             if (DOM.remainingDot) DOM.remainingDot.classList.add("bg-warning", "blink-slow");
             if (DOM.remainingText) {
-                DOM.remainingText.className = "color-warning";
+                DOM.remainingText.className = "kpi-status-tag color-warning";
                 DOM.remainingText.textContent = "WARNING";
             }
         } else {
@@ -217,33 +270,64 @@ export const MachineController = {
             DOM.remainingCard.classList.add("glow-alarm");
             if (DOM.remainingDot) DOM.remainingDot.classList.add("bg-alarm", "blink-fast");
             if (DOM.remainingText) {
-                DOM.remainingText.className = "color-alarm";
+                DOM.remainingText.className = "kpi-status-tag color-alarm";
                 DOM.remainingText.textContent = "ALARM";
             }
         }
 
         const formatHours = (remainingTotal < 0 ? "-" : "") + Math.abs(remainingTotal) + " hrs";
         DOM.remainingHour.textContent = formatHours;
-        if (DOM.remainingDay) DOM.remainingDay.textContent = remInfo.daysVal + " " + remInfo.statusMsg;
+        
+        if (DOM.remainingDay) {
+            if (critMetric.isContingencyActive) {
+                DOM.remainingDay.textContent = "RECOMMENDED LIFE EXCEEDED";
+                DOM.remainingDay.style.color = "var(--red)";
+                DOM.remainingDay.style.fontWeight = "700";
+            } else {
+                DOM.remainingDay.textContent = remInfo.daysVal + " " + remInfo.statusMsg;
+                DOM.remainingDay.style.color = "var(--muted)";
+                DOM.remainingDay.style.fontWeight = "normal";
+            }
+        }
     },
 
-    updateStatusCardUI(status, DOM) {
-        if (!DOM.statusText || !DOM.recommendation) return;
-        DOM.statusText.textContent = status;
-        DOM.statusText.style.textShadow = "none";
+    updateStatusCardUI(status, DOM, critMetric = {}) {
+        if (!DOM.recommendation) return;
+        if (DOM.statusText) {
+            DOM.statusText.textContent = status;
+            DOM.statusText.style.textShadow = "none";
+        }
 
         if (status === "SAFE") {
-            DOM.statusText.style.color = "var(--green)";
-            DOM.statusText.style.textShadow = "0 0 18px rgba(52,211,153,.35)";
-            DOM.recommendation.textContent = "Continue normal operation. Review during the next preventive maintenance.";
+            if (DOM.statusText) {
+                DOM.statusText.style.color = "var(--green)";
+                DOM.statusText.style.textShadow = "0 0 18px rgba(52,211,153,.35)";
+            }
+            DOM.recommendation.className = "recommendation-banner color-safe";
+            DOM.recommendation.style.backgroundColor = "rgba(16, 185, 129, 0.1)";
+            DOM.recommendation.style.borderColor = "var(--green)";
+            DOM.recommendation.style.color = "var(--green)";
+            DOM.recommendation.textContent = "Continue normal operation. Review during next preventive maintenance.";
         } else if (status === "WARNING") {
-            DOM.statusText.style.color = "var(--yellow)";
-            DOM.statusText.style.textShadow = "0 0 18px rgba(251,191,36,.35)";
-            DOM.recommendation.textContent = "Prepare laser replacement and schedule maintenance before reaching the alarm limit.";
+            if (DOM.statusText) {
+                DOM.statusText.style.color = "var(--yellow)";
+                DOM.statusText.style.textShadow = "0 0 18px rgba(251,191,36,.35)";
+            }
+            DOM.recommendation.className = "recommendation-banner color-warning";
+            DOM.recommendation.style.backgroundColor = "rgba(245, 158, 11, 0.12)";
+            DOM.recommendation.style.borderColor = "var(--yellow)";
+            DOM.recommendation.style.color = "var(--yellow)";
+            DOM.recommendation.textContent = "REPLACEMENT PLANNING REQUIRED • RECOMMENDED LIFE LIMIT APPROACHING. Schedule maintenance before reaching recommended lifetime limit.";
         } else {
-            DOM.statusText.style.color = "var(--red)";
-            DOM.statusText.style.textShadow = "0 0 18px rgba(248,113,113,.45)";
-            DOM.recommendation.textContent = "Laser lifetime exceeded. Replacement is strongly recommended to reduce unplanned downtime.";
+            if (DOM.statusText) {
+                DOM.statusText.style.color = "var(--red)";
+                DOM.statusText.style.textShadow = "0 0 18px rgba(248,113,113,.45)";
+            }
+            DOM.recommendation.className = "recommendation-banner color-alarm";
+            DOM.recommendation.style.backgroundColor = "rgba(239, 68, 68, 0.15)";
+            DOM.recommendation.style.borderColor = "var(--red)";
+            DOM.recommendation.style.color = "var(--red)";
+            DOM.recommendation.textContent = `🚨 RECOMMENDED LASER LIFE EXCEEDED. AUTOMATIC CONTINGENCY MODE ACTIVE. Immediate laser replacement planning and customer risk management required.`;
         }
     },
 

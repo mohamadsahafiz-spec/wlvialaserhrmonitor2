@@ -167,14 +167,22 @@ export const DashboardController = {
             const formatHrs = Math.abs(crit.remainingTotal);
             const remainText = crit.remainingTotal < 0 ? `-${formatHrs} hrs` : `${formatHrs} hrs`;
             const recalDateStr = crit.lastRecalibrationDate ? new Date(crit.lastRecalibrationDate).toLocaleDateString() : 'N/A';
-            const remDaysText = crit.remainingDaysInfo.formattedText;
+            const remDaysText = crit.isContingencyActive ? 'EXCEEDED' : crit.remainingDaysInfo.formattedText;
+            const lifeRemainingDisplay = crit.isContingencyActive ? '0%' : crit.formattedLifeRemaining;
+            const lifeRemainingPct = crit.isContingencyActive ? 0 : crit.lifeRemainingPercent;
+
+            const alarmBannerHtml = crit.isContingencyActive ? `
+                <div style="margin-top: 8px; padding: 4px 8px; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--red); border-radius: 4px; color: var(--red); font-size: 11px; font-weight: 800; text-align: center; letter-spacing: 0.3px;">
+                    RECOMMENDED LIFE EXCEEDED
+                </div>
+            ` : '';
 
             // Generate Laser Heads Indicator Row (Pills/Dots)
             const laserPillsHtml = metrics.laserMetricsList.map((lm, idx) => {
                 let pColor = 'var(--green)';
                 if (lm.status === 'WARNING') pColor = 'var(--yellow)';
                 if (lm.status === 'ALARM') pColor = 'var(--red)';
-                return `<span class="laser-head-pill" title="${lm.name}: ${lm.currentHour} hrs, ${lm.formattedLifeRemaining} Life Remaining (${lm.status})">
+                return `<span class="laser-head-pill" title="${lm.name}: ${lm.currentHour} hrs, ${lm.isContingencyActive ? '0%' : lm.formattedLifeRemaining} Life Remaining (${lm.status})">
                     <span class="laser-pill-dot" style="background:${pColor}; box-shadow: 0 0 6px ${pColor};"></span>
                     <span class="laser-pill-name">L${idx + 1}</span>
                 </span>`;
@@ -211,9 +219,11 @@ export const DashboardController = {
                     </div>
                     <div class="mc-stat-item">
                         <span class="mc-stat-label">Days to Limit</span>
-                        <span class="mc-stat-val mc-stat-val-days" style="font-size:14px; margin-top:4px;">${remDaysText}</span>
+                        <span class="mc-stat-val mc-stat-val-days" style="font-size:13px; margin-top:4px; ${crit.isContingencyActive ? 'color:var(--red); font-weight:800;' : ''}">${remDaysText}</span>
                     </div>
                 </div>
+
+                ${alarmBannerHtml}
 
                 <div class="mc-extra-info">
                     <div>Accuracy: <strong style="color:${crit.accuracy.color}">${crit.accuracy.label}</strong></div>
@@ -223,9 +233,9 @@ export const DashboardController = {
 
                 <div class="mc-footer">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span class="mc-health-text">Life Remaining: <strong>${crit.formattedLifeRemaining}</strong></span>
-                        <div class="mini-health-track" title="Life Remaining: ${crit.formattedLifeRemaining}">
-                            <div class="mini-health-fill" style="width: ${crit.lifeRemainingPercent}%;"></div>
+                        <span class="mc-health-text">Life Remaining: <strong>${lifeRemainingDisplay}</strong></span>
+                        <div class="mini-health-track" title="Life Remaining: ${lifeRemainingDisplay}">
+                            <div class="mini-health-fill" style="width: ${lifeRemainingPct}%;"></div>
                         </div>
                     </div>
                     <div class="mc-card-actions">
@@ -240,7 +250,7 @@ export const DashboardController = {
             `;
 
             const fillEl = card.querySelector('.mini-health-fill');
-            ChartRenderer.updateMiniHealthTrack(fillEl, crit.lifeRemainingPercent, crit.status);
+            ChartRenderer.updateMiniHealthTrack(fillEl, lifeRemainingPct, crit.status);
 
             const editBtn = card.querySelector('.btn-edit-card');
             if (editBtn) {

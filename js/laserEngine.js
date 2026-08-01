@@ -252,7 +252,8 @@ export const LaserEngine = {
         const baseHour = Number(laser.baseLaserHour) || 0;
         const baseTs = laser.baseTimestamp || now.toISOString();
         const ratedLife = Number(laser.ratedLife) || 25000;
-        const warningLife = Number(laser.warningLife) || Math.floor(ratedLife * 0.8);
+        const warningLife = Number(laser.warningLife) || 20000;
+        const contingencyCeiling = Number(laser.contingencyCeiling) || (ratedLife + 3000);
 
         const currentHour = this.calculateEstimatedHour(baseHour, baseTs, now);
         const remainingTotal = this.calculateRemainingHours(currentHour, ratedLife);
@@ -261,6 +262,17 @@ export const LaserEngine = {
         const status = this.calculateLaserStatus(currentHour, ratedLife, warningLife);
         const remainingDaysInfo = this.calculateRemainingDaysInfo(remainingTotal, ratedLife, warningLife);
         const age = this.calculateLaserAge(currentHour);
+
+        const isContingencyActive = currentHour >= ratedLife;
+        const hoursExceeded = isContingencyActive ? Math.round((currentHour - ratedLife) * 10) / 10 : 0;
+        const contingencyMargin = isContingencyActive ? Math.max(0, Math.round((contingencyCeiling - currentHour) * 10) / 10) : null;
+
+        let warningMessage = "";
+        if (status === 'WARNING') {
+            warningMessage = "REPLACEMENT PLANNING REQUIRED • RECOMMENDED LIFE LIMIT APPROACHING";
+        } else if (status === 'ALARM') {
+            warningMessage = "RECOMMENDED LASER LIFE EXCEEDED";
+        }
 
         const daysSinceRecal = this.calculateDaysSinceRecalibration(laser.lastRecalibrationDate || baseTs, now);
         const accuracy = this.calculateAccuracy(daysSinceRecal);
@@ -276,6 +288,11 @@ export const LaserEngine = {
             baseTimestamp: baseTs,
             ratedLife,
             warningLife,
+            contingencyCeiling,
+            isContingencyActive,
+            hoursExceeded,
+            contingencyMargin,
+            warningMessage,
             currentHour: Math.round(currentHour * 10) / 10,
             currentHourRaw: currentHour,
             remainingTotal: Math.round(remainingTotal * 10) / 10,
