@@ -13,6 +13,9 @@ export const MachineController = {
      */
     renderSingleDashboard(machine, DOM, evalTime, silent = false, callbacks = {}) {
         if (!machine || !DOM) return;
+        if ((!callbacks || typeof callbacks.onRecalibrateLaser !== 'function') && typeof window.getMachineCallbacks === 'function') {
+            callbacks = window.getMachineCallbacks();
+        }
 
         const metrics = LaserEngine.calculateMachineMetrics(machine, evalTime);
         const lasersCount = metrics.totalLasers || (machine.lasers ? machine.lasers.length : 1);
@@ -270,13 +273,18 @@ export const MachineController = {
                     ${laserList.length > 1 ? `
                     <button class="btn btn-icon-danger btn-delete-laser" data-laser-id="${lm.id}" title="Remove Laser Head">
                         <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>` : ''}
+                    </button>` : `
+                    <button class="btn btn-icon-danger btn-delete-laser" data-laser-id="${lm.id}" title="At least one laser head is required." disabled style="opacity:0.4; cursor:not-allowed;">
+                        <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>`}
                 </div>
             `;
 
             const recalBtn = card.querySelector('.btn-recal-laser');
             if (recalBtn) {
-                recalBtn.onclick = () => {
+                recalBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (typeof callbacks.onRecalibrateLaser === 'function') {
                         callbacks.onRecalibrateLaser(machine.id, lm.id);
                     }
@@ -285,7 +293,9 @@ export const MachineController = {
 
             const editBtn = card.querySelector('.btn-edit-laser');
             if (editBtn) {
-                editBtn.onclick = () => {
+                editBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (typeof callbacks.onEditLaser === 'function') {
                         callbacks.onEditLaser(machine.id, lm.id);
                     }
@@ -293,8 +303,10 @@ export const MachineController = {
             }
 
             const deleteBtn = card.querySelector('.btn-delete-laser');
-            if (deleteBtn) {
-                deleteBtn.onclick = () => {
+            if (deleteBtn && !deleteBtn.disabled) {
+                deleteBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (typeof callbacks.onDeleteLaser === 'function') {
                         callbacks.onDeleteLaser(machine.id, lm.id);
                     }
