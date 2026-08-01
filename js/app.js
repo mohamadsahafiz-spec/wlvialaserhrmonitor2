@@ -111,8 +111,12 @@ function initDOM() {
         laserModalId: document.getElementById('laser-modal-id'),
         laserModalName: document.getElementById('laser-modal-name'),
         laserModalSerial: document.getElementById('laser-modal-serial'),
-        laserModalRated: document.getElementById('laser-modal-rated'),
         laserModalBaseHour: document.getElementById('laser-modal-base-hour'),
+        laserModalTimestamp: document.getElementById('laser-modal-timestamp'),
+        laserModalWarning: document.getElementById('laser-modal-warning'),
+        laserModalRated: document.getElementById('laser-modal-rated'),
+        laserModalContingency: document.getElementById('laser-modal-contingency'),
+        laserModalPreviewText: document.getElementById('laser-modal-preview-text'),
 
         // Deviation Analysis Modal
         deviationOverlay: document.getElementById('deviation-modal-overlay'),
@@ -653,6 +657,36 @@ function setupEventListeners() {
         });
     };
 
+    const updateLaserModalPreview = () => {
+        if (!DOM.laserModalPreviewText) return;
+        const baseHour = Number(DOM.laserModalBaseHour ? DOM.laserModalBaseHour.value : 0) || 0;
+        const tsVal = DOM.laserModalTimestamp ? DOM.laserModalTimestamp.value : '';
+        const evalTime = getEvalTime();
+
+        if (!tsVal) {
+            DOM.laserModalPreviewText.textContent = `Estimated now: ${baseHour.toFixed(1)} hrs (0.0 days elapsed)`;
+            return;
+        }
+
+        const baseMs = new Date(tsVal).getTime();
+        const evalMs = evalTime.getTime();
+
+        if (isNaN(baseMs)) {
+            DOM.laserModalPreviewText.textContent = `Estimated now: ${baseHour.toFixed(1)} hrs (0.0 days elapsed)`;
+            return;
+        }
+
+        const elapsedMs = Math.max(0, evalMs - baseMs);
+        const elapsedDays = elapsedMs / (1000 * 60 * 60 * 24);
+        const elapsedHours = elapsedMs / (1000 * 60 * 60);
+        const estNow = baseHour + elapsedHours;
+
+        DOM.laserModalPreviewText.textContent = `Estimated now: ${estNow.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} hrs (${elapsedDays.toFixed(1)} days elapsed)`;
+    };
+
+    if (DOM.laserModalBaseHour) DOM.laserModalBaseHour.addEventListener('input', updateLaserModalPreview);
+    if (DOM.laserModalTimestamp) DOM.laserModalTimestamp.addEventListener('input', updateLaserModalPreview);
+
     const openEditLaserModal = (mId, laserId) => {
         requireEngineerMode(() => {
             const machine = AppState.machines.find(m => m.id === (mId || AppState.currentMachineId));
@@ -665,9 +699,13 @@ function setupEventListeners() {
             if (DOM.laserModalId) DOM.laserModalId.value = laser.id;
             if (DOM.laserModalName) DOM.laserModalName.value = laser.name || '';
             if (DOM.laserModalSerial) DOM.laserModalSerial.value = laser.serialNo || '';
-            if (DOM.laserModalRated) DOM.laserModalRated.value = laser.ratedLife || 25000;
             if (DOM.laserModalBaseHour) DOM.laserModalBaseHour.value = laser.baseLaserHour || 0;
+            if (DOM.laserModalTimestamp) DOM.laserModalTimestamp.value = safeToDatetimeLocal(laser.baseTimestamp || getEvalTime().toISOString());
+            if (DOM.laserModalWarning) DOM.laserModalWarning.value = laser.warningLife || 20000;
+            if (DOM.laserModalRated) DOM.laserModalRated.value = laser.ratedLife || 25000;
+            if (DOM.laserModalContingency) DOM.laserModalContingency.value = laser.contingencyCeiling || 28000;
 
+            updateLaserModalPreview();
             UI.showModal(DOM.laserModalOverlay);
         });
     };
@@ -714,9 +752,13 @@ function setupEventListeners() {
                 if (DOM.laserModalId) DOM.laserModalId.value = '';
                 if (DOM.laserModalName) DOM.laserModalName.value = `Laser Head #${nextNum}`;
                 if (DOM.laserModalSerial) DOM.laserModalSerial.value = `${machine.serialNo || 'BMD'}-L${nextNum}`;
-                if (DOM.laserModalRated) DOM.laserModalRated.value = machine.ratedLife || 25000;
                 if (DOM.laserModalBaseHour) DOM.laserModalBaseHour.value = 0;
+                if (DOM.laserModalTimestamp) DOM.laserModalTimestamp.value = safeToDatetimeLocal(getEvalTime().toISOString());
+                if (DOM.laserModalWarning) DOM.laserModalWarning.value = 20000;
+                if (DOM.laserModalRated) DOM.laserModalRated.value = 25000;
+                if (DOM.laserModalContingency) DOM.laserModalContingency.value = 28000;
 
+                updateLaserModalPreview();
                 UI.showModal(DOM.laserModalOverlay);
             });
         });
@@ -736,9 +778,12 @@ function setupEventListeners() {
             const lid = DOM.laserModalId ? DOM.laserModalId.value : '';
             const lname = DOM.laserModalName ? DOM.laserModalName.value.trim() : 'Laser Head';
             const lserial = DOM.laserModalSerial ? DOM.laserModalSerial.value.trim() : 'SN-N/A';
-            const lrated = Number(DOM.laserModalRated ? DOM.laserModalRated.value : 25000) || 25000;
             const lbaseHour = Number(DOM.laserModalBaseHour ? DOM.laserModalBaseHour.value : 0) || 0;
-            const nowISO = getEvalTime().toISOString();
+            const ltsInput = DOM.laserModalTimestamp ? DOM.laserModalTimestamp.value : '';
+            const lbaseTs = safeToISOString(ltsInput, getEvalTime().toISOString());
+            const lwarning = Number(DOM.laserModalWarning ? DOM.laserModalWarning.value : 20000) || 20000;
+            const lrated = Number(DOM.laserModalRated ? DOM.laserModalRated.value : 25000) || 25000;
+            const lcontingency = Number(DOM.laserModalContingency ? DOM.laserModalContingency.value : 28000) || (lrated + 3000);
 
             if (lid) {
                 // Update existing laser
@@ -746,9 +791,11 @@ function setupEventListeners() {
                 if (existingLaser) {
                     existingLaser.name = lname;
                     existingLaser.serialNo = lserial;
-                    existingLaser.ratedLife = lrated;
-                    existingLaser.warningLife = Math.floor(lrated * 0.8);
                     existingLaser.baseLaserHour = lbaseHour;
+                    existingLaser.baseTimestamp = lbaseTs;
+                    existingLaser.warningLife = lwarning;
+                    existingLaser.ratedLife = lrated;
+                    existingLaser.contingencyCeiling = lcontingency;
                 }
             } else {
                 // Add new laser
@@ -756,11 +803,12 @@ function setupEventListeners() {
                     id: `${machine.id}-L${Date.now().toString().slice(-4)}`,
                     name: lname,
                     serialNo: lserial,
-                    ratedLife: lrated,
-                    warningLife: Math.floor(lrated * 0.8),
                     baseLaserHour: lbaseHour,
-                    baseTimestamp: nowISO,
-                    lastRecalibrationDate: nowISO,
+                    baseTimestamp: lbaseTs,
+                    warningLife: lwarning,
+                    ratedLife: lrated,
+                    contingencyCeiling: lcontingency,
+                    lastRecalibrationDate: lbaseTs,
                     calibrationHistory: []
                 };
                 machine.lasers.push(newLaser);

@@ -4,6 +4,7 @@
    lifetime %, worst-state status aggregation, accuracy,
    and recalibration logic.
    ===================================================== */
+import { formatDate } from './utils.js';
 
 /**
  * Helper: Format Life Remaining percentage according to system precision rules:
@@ -296,6 +297,43 @@ export const LaserEngine = {
         const nextRecalDate = this.calculateNextRecalibrationDate(laser.lastRecalibrationDate || baseTs);
         const eolDate = this.calculateEstimatedEndOfLifeDate(currentHour, ratedLife, now);
 
+        let limitDateFormatted = 'N/A';
+        let limitDaysText = '';
+        let limitSubText = '';
+
+        if (!isContingencyActive) {
+            const remainingMs = Math.max(0, remainingTotal) * 3600 * 1000;
+            const limitTimestamp = now.getTime() + remainingMs;
+            limitDateFormatted = formatDate(limitTimestamp);
+
+            if (remainingTotal < 24 && remainingTotal >= 0) {
+                limitDaysText = '<1 day';
+            } else {
+                const days = Math.floor(remainingTotal / 24);
+                limitDaysText = `${days.toLocaleString()} days`;
+            }
+            limitSubText = `Est. ${limitDateFormatted}`;
+        } else {
+            const exceededMs = hoursExceeded * 3600 * 1000;
+            const exceededTimestamp = now.getTime() - exceededMs;
+            limitDateFormatted = formatDate(exceededTimestamp);
+
+            const daysOverdue = Math.floor(hoursExceeded / 24);
+            if (daysOverdue < 1) {
+                limitDaysText = '<1 day overdue';
+            } else {
+                limitDaysText = `${daysOverdue.toLocaleString()} days overdue`;
+            }
+            limitSubText = `Exceeded ${limitDateFormatted}`;
+        }
+
+        const recommendedLimitInfo = {
+            daysText: limitDaysText,
+            subText: limitSubText,
+            dateFormatted: limitDateFormatted,
+            isExceeded: isContingencyActive
+        };
+
         return {
             id: laser.id,
             name: laser.name || 'Laser Head',
@@ -316,6 +354,7 @@ export const LaserEngine = {
             formattedLifeRemaining,
             status,
             remainingDaysInfo,
+            recommendedLimitInfo,
             daysSinceRecal,
             accuracy,
             recalRecommendation,
@@ -406,6 +445,7 @@ export const LaserEngine = {
             currentHourRaw: mostCriticalLaser.currentHourRaw,
             remainingTotal: mostCriticalLaser.remainingTotal,
             remainingDaysInfo: mostCriticalLaser.remainingDaysInfo,
+            recommendedLimitInfo: mostCriticalLaser.recommendedLimitInfo,
             lifeRemainingPercent: mostCriticalLaser.lifeRemainingPercent,
             formattedLifeRemaining: mostCriticalLaser.formattedLifeRemaining,
             accuracy: mostCriticalLaser.accuracy,

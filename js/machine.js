@@ -52,12 +52,39 @@ export const MachineController = {
 
         // Top Summary Metric Cards (Mapped to most critical laser)
         const crit = metrics.mostCriticalLaser;
+
+        const heroCritName = document.getElementById('hero-crit-name');
+        const heroCritSerial = document.getElementById('hero-crit-serial');
+        const heroCritText = document.getElementById('hero-crit-status-text');
+        const heroCritLed = document.getElementById('hero-crit-status-led');
+        const heroCritBadge = document.getElementById('hero-crit-status-badge');
+
+        if (heroCritName) heroCritName.textContent = crit.name;
+        if (heroCritSerial) heroCritSerial.textContent = `SN: ${crit.serialNo || 'N/A'}`;
+        if (heroCritText) heroCritText.textContent = crit.status;
+        if (heroCritBadge) {
+            const statusClass = crit.status === 'SAFE' ? 'color-safe' : (crit.status === 'WARNING' ? 'color-warning' : 'color-alarm');
+            const bgClass = crit.status === 'SAFE' ? 'bg-safe' : (crit.status === 'WARNING' ? 'bg-warning' : 'bg-alarm');
+            heroCritBadge.className = `mc-status-badge ${statusClass}`;
+            if (heroCritLed) heroCritLed.className = `mc-led ${bgClass} led-solid`;
+        }
+
         if (DOM.currentHour) DOM.currentHour.textContent = `${crit.currentHour} hrs`;
         if (DOM.currentAge) DOM.currentAge.textContent = `Critical: ${crit.name}`;
         
         if (DOM.healthPercent) {
             DOM.healthPercent.textContent = crit.isContingencyActive ? '0%' : crit.formattedLifeRemaining;
         }
+
+        // Populate Configuration Tab fields
+        const detNum = document.getElementById('det-mach-no');
+        const detModel = document.getElementById('det-model');
+        const detSerial = document.getElementById('det-serial-no');
+        const detDept = document.getElementById('det-dept');
+        if (detNum) detNum.value = machine.machineNo || '';
+        if (detModel) detModel.value = machine.model || 'BMD302W';
+        if (detSerial) detSerial.value = machine.serialNo || '';
+        if (detDept) detDept.value = machine.department || 'Wafer Prep';
 
         // Warning Operational Banner
         const warnBanner = document.getElementById('mach-warning-banner');

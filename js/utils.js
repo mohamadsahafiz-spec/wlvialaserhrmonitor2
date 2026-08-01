@@ -28,14 +28,14 @@ export function safeToDatetimeLocal(val, fallback = '') {
 }
 
 /**
- * Format ISO date string to localized date string (YYYY-MM-DD).
+ * Format ISO date string to localized date string (DD MMM YYYY e.g. 30 Nov 2027).
  */
 export function formatDate(isoString) {
     if (!isoString) return 'N/A';
     try {
         const date = new Date(isoString);
         if (isNaN(date.getTime())) return 'N/A';
-        return date.toLocaleDateString();
+        return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     } catch (e) {
         return 'N/A';
     }

@@ -76,11 +76,20 @@ export const DashboardController = {
             return matchSearch && matchStatus && matchDept && matchModel;
         });
 
-        // Sort machines based on selected sort option
+        // Sort machines based on Primary Status Order (ALARM > WARNING > SAFE) then user selected sortMode
         filtered.sort((a, b) => {
             const metricsA = LaserEngine.calculateMachineMetrics(a, evalTime);
             const metricsB = LaserEngine.calculateMachineMetrics(b, evalTime);
 
+            const statusPriority = { 'ALARM': 3, 'WARNING': 2, 'SAFE': 1 };
+            const priA = statusPriority[metricsA.status] ?? 0;
+            const priB = statusPriority[metricsB.status] ?? 0;
+
+            if (priA !== priB) {
+                return priB - priA; // Primary order: ALARM > WARNING > SAFE
+            }
+
+            // Secondary sort within same status group according to user sort choice
             switch (sortMode) {
                 case 'no-asc':
                     return (a.machineNo || '').localeCompare(b.machineNo || '', undefined, { numeric: true, sensitivity: 'base' });
@@ -98,10 +107,6 @@ export const DashboardController = {
                     return metricsA.lifeRemainingPercent - metricsB.lifeRemainingPercent;
                 case 'health-desc':
                     return metricsB.lifeRemainingPercent - metricsA.lifeRemainingPercent;
-                case 'status-urgent': {
-                    const statusOrder = { 'ALARM': 0, 'WARNING': 1, 'SAFE': 2 };
-                    return (statusOrder[metricsA.status] ?? 3) - (statusOrder[metricsB.status] ?? 3);
-                }
                 case 'recal-newest': {
                     const tA = new Date(metricsA.lastRecalibrationDate || 0).getTime() || 0;
                     const tB = new Date(metricsB.lastRecalibrationDate || 0).getTime() || 0;
@@ -113,7 +118,7 @@ export const DashboardController = {
                     return tA - tB;
                 }
                 default:
-                    return 0;
+                    return (a.machineNo || '').localeCompare(b.machineNo || '', undefined, { numeric: true, sensitivity: 'base' });
             }
         });
 
@@ -162,7 +167,7 @@ export const DashboardController = {
             }
 
             const card = document.createElement('div');
-            card.className = 'machine-card glass-panel';
+            card.className = 'machine-card glass-panel' + (metrics.status === 'ALARM' ? ' alarm-breathing' : '');
             card.setAttribute('data-id', machine.id);
             card.onclick = (e) => {
                 if (typeof onSelectMachine === 'function') {
@@ -174,7 +179,7 @@ export const DashboardController = {
             const formatHrs = Math.abs(crit.remainingTotal);
             const remainText = crit.remainingTotal < 0 ? `-${formatHrs} hrs` : `${formatHrs} hrs`;
             const recalDateStr = crit.lastRecalibrationDate ? formatDate(crit.lastRecalibrationDate) : 'N/A';
-            const remDaysText = crit.isContingencyActive ? 'EXCEEDED' : crit.remainingDaysInfo.formattedText;
+            const limitInfo = crit.recommendedLimitInfo || { daysText: crit.remainingDaysInfo.formattedText, subText: '', isExceeded: crit.isContingencyActive };
             const lifeRemainingDisplay = crit.isContingencyActive ? '0%' : crit.formattedLifeRemaining;
             const lifeRemainingPct = crit.isContingencyActive ? 0 : crit.lifeRemainingPercent;
 
@@ -226,7 +231,8 @@ export const DashboardController = {
                     </div>
                     <div class="mc-stat-item">
                         <span class="mc-stat-label">Days to Limit</span>
-                        <span class="mc-stat-val mc-stat-val-days" style="font-size:13px; margin-top:4px; ${crit.isContingencyActive ? 'color:var(--red); font-weight:800;' : ''}">${remDaysText}</span>
+                        <span class="mc-stat-val mc-stat-val-days" style="font-size:13px; margin-top:2px; ${limitInfo.isExceeded ? 'color:var(--red); font-weight:800;' : ''}">${limitInfo.daysText}</span>
+                        <div style="font-size:11px; color:var(--muted); font-weight:500; margin-top:2px;">${limitInfo.subText}</div>
                     </div>
                 </div>
 

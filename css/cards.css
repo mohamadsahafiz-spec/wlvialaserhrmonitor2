@@ -20,6 +20,29 @@
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
+@keyframes alarmBreathing {
+    0%, 100% {
+        border-color: rgba(239, 68, 68, 0.4);
+        box-shadow: 0 0 8px rgba(239, 68, 68, 0.2);
+    }
+    50% {
+        border-color: rgba(239, 68, 68, 0.95);
+        box-shadow: 0 0 22px rgba(239, 68, 68, 0.5);
+    }
+}
+
+.machine-card.alarm-breathing {
+    animation: alarmBreathing 3s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .machine-card.alarm-breathing {
+        animation: none;
+        border-color: rgba(239, 68, 68, 0.85);
+        box-shadow: 0 0 14px rgba(239, 68, 68, 0.35);
+    }
+}
+
 
 .mc-header {
     display: flex;

@@ -301,7 +301,21 @@
                             </div>
                         </div>
 
-                        <!-- Primary KPI Dashboard Cards -->
+                        <!-- Primary KPI Dashboard Header & Cards (Mapped to Most Critical Laser) -->
+                        <div id="crit-laser-hero-bar" class="glass-panel" style="margin-bottom: 14px; padding: 12px 18px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; border-left: 4px solid var(--primary);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <span class="badge badge-info" style="font-weight: 800; font-size: 11px; letter-spacing: 0.5px;">MOST CRITICAL LASER</span>
+                                <div style="font-size: 14px; font-weight: 700; color: var(--text);">
+                                    <span id="hero-crit-name">Laser Head 1</span>
+                                    <span id="hero-crit-serial" style="color: var(--muted); font-weight: 500; margin-left: 8px;">SN: --</span>
+                                </div>
+                            </div>
+                            <div id="hero-crit-status-badge" class="mc-status-badge color-safe" style="font-size: 12px;">
+                                <div id="hero-crit-status-led" class="mc-led bg-safe led-solid"></div>
+                                <span id="hero-crit-status-text">SAFE</span>
+                            </div>
+                        </div>
+
                         <div class="mach-kpi-grid">
                             <div class="mach-kpi-card glass-panel">
                                 <div class="kpi-header">
@@ -326,11 +340,11 @@
 
                             <div class="mach-kpi-card glass-panel">
                                 <div class="kpi-header">
-                                    <span class="kpi-label">Health Status</span>
+                                    <span class="kpi-label">Life Remaining %</span>
                                     <div class="kpi-icon bg-teal"><svg class="icon" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg></div>
                                 </div>
                                 <div id="healthPercent" class="kpi-value color-primary">0%</div>
-                                <div class="kpi-sub">Rated Life Consumption</div>
+                                <div class="kpi-sub">Recommended Life Capacity</div>
                             </div>
 
                             <div class="mach-kpi-card glass-panel">
@@ -504,8 +518,8 @@
                         <div id="config-engineer-gate" class="glass-panel mach-section-box">
                             <div class="section-title-row">
                                 <div>
-                                    <h3>Machine Configuration & Baseline Settings</h3>
-                                    <p class="section-desc">Editable parameters for baseline laser hours, rated life, and department routing</p>
+                                    <h3>Machine Configuration Parameters</h3>
+                                    <p class="section-desc">Editable identity parameters for machine routing and department tracking</p>
                                 </div>
                                 <span class="badge badge-engineer">Engineer Access Only</span>
                             </div>
@@ -534,28 +548,7 @@
                                         <option value="R&D">R&D</option>
                                     </select>
                                 </div>
-                                
-                                <details class="advanced-settings-details" style="margin-top: 16px; margin-bottom: 8px;">
-                                    <summary style="cursor:pointer; color:var(--muted); font-size:13px; font-weight:600; padding:8px 0; outline:none; user-select:none;">
-                                        Advanced Hardware Settings (Collapse)
-                                    </summary>
-                                    <div class="machine-info-grid" style="margin-top:12px; padding: 16px; background:rgba(0,0,0,0.2); border-radius:12px; border:1px solid var(--glass-border);">
-                                        <div class="form-group">
-                                            <label>Rated Life Limit (hrs)</label>
-                                            <input type="number" id="det-rated" class="input-control" value="25000">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Baseline Laser Hour (hrs)</label>
-                                            <input type="number" id="prevHour" class="input-control" value="12500">
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Baseline Timestamp</label>
-                                            <input type="datetime-local" id="prevDate" class="input-control">
-                                        </div>
-                                    </div>
-                                </details>
                             </div>
-
 
                             <div style="margin-top:24px; display:flex; justify-content:flex-end;">
                                 <button id="btn-save-machine" class="btn btn-primary">
@@ -682,14 +675,14 @@
          MODAL: EDIT MACHINE
     ===================================================== -->
     <div id="edit-modal-overlay" class="modal-overlay">
-        <div class="modal-content glass-panel">
+        <div class="modal-content glass-panel" style="max-width:480px;">
             <div class="modal-header">
-                <h3>Edit Laser Driller Machine</h3>
+                <h3>Edit Laser Driller Machine Properties</h3>
                 <button id="btn-close-edit-modal" class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="edit-mach-id">
-                <div class="form-grid">
+                <div class="form-grid" style="grid-template-columns:1fr;">
                     <div class="form-group">
                         <label>Machine No</label>
                         <input type="text" id="edit-mach-no" class="input-control">
@@ -712,14 +705,6 @@
                             <option value="Packaging">Packaging</option>
                             <option value="R&D">R&D</option>
                         </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Rated Life Limit (hrs)</label>
-                        <input type="number" id="edit-mach-rated" class="input-control">
-                    </div>
-                    <div class="form-group">
-                        <label>Baseline Laser Hour (hrs)</label>
-                        <input type="number" id="edit-mach-base-hour" class="input-control">
                     </div>
                 </div>
             </div>
@@ -847,29 +832,53 @@
          MODAL: ADD / EDIT LASER HEAD
     ===================================================== -->
     <div id="laser-modal-overlay" class="modal-overlay">
-        <div class="modal-content glass-panel" style="max-width:480px;">
+        <div class="modal-content glass-panel" style="max-width:520px;">
             <div class="modal-header">
                 <h3 id="laser-modal-title">Laser Head Unit Configuration</h3>
                 <button id="btn-close-laser-modal" class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="laser-modal-id">
-                <div class="form-grid" style="grid-template-columns:1fr;">
-                    <div class="form-group">
-                        <label>Laser Head Name</label>
+                <div class="form-grid" style="grid-template-columns:1fr 1fr; gap: 14px;">
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Laser Head Name / Label</label>
                         <input type="text" id="laser-modal-name" class="input-control" placeholder="e.g. Laser Head #2 (Auxiliary)">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="grid-column: 1 / -1;">
                         <label>Laser Head Serial Number</label>
                         <input type="text" id="laser-modal-serial" class="input-control" placeholder="e.g. BMD3-9021-L2">
                     </div>
+
                     <div class="form-group">
-                        <label>Rated Life Limit (hrs)</label>
-                        <input type="number" id="laser-modal-rated" class="input-control" value="25000">
+                        <label>Captured Laser Hour (hrs)</label>
+                        <input type="number" id="laser-modal-base-hour" class="input-control" value="0" step="0.1">
+                        <div style="font-size:11px; color:var(--muted); margin-top:4px;">Hour-meter reading recorded at captured date/time.</div>
                     </div>
                     <div class="form-group">
-                        <label>Initial / Baseline Laser Hour (hrs)</label>
-                        <input type="number" id="laser-modal-base-hour" class="input-control" value="0">
+                        <label>Captured Date & Time</label>
+                        <input type="datetime-local" id="laser-modal-timestamp" class="input-control">
+                        <div style="font-size:11px; color:var(--muted); margin-top:4px;">Reference point for automatic estimation.</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Warning Threshold (hrs)</label>
+                        <input type="number" id="laser-modal-warning" class="input-control" value="20000">
+                    </div>
+                    <div class="form-group">
+                        <label>Recommended Life Limit (hrs)</label>
+                        <input type="number" id="laser-modal-rated" class="input-control" value="25000">
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Contingency Ceiling (hrs)</label>
+                        <input type="number" id="laser-modal-contingency" class="input-control" value="28000">
+                    </div>
+
+                    <!-- Calculated Preview Box -->
+                    <div class="form-group" style="grid-column: 1 / -1; margin-top: 4px;">
+                        <div id="laser-modal-preview" style="padding: 12px 14px; background: rgba(59, 130, 246, 0.1); border: 1px solid var(--primary); border-radius: 8px; font-size: 13px; color: var(--text); font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;stroke:var(--primary);flex-shrink:0;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            <span id="laser-modal-preview-text">Estimated now: -- hrs (0.0 days elapsed)</span>
+                        </div>
                     </div>
                 </div>
             </div>
