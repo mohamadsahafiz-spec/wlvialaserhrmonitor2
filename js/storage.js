@@ -216,6 +216,9 @@ export const StorageService = {
                 // Migrate single laser machine object into multi-laser structure
                 const rated = Number(m.ratedLife) || 25000;
                 const warn = Number(m.warningLife) || Math.floor(rated * 0.8);
+                const contingency = (typeof m.contingencyCeiling === 'number' && !isNaN(m.contingencyCeiling))
+                    ? m.contingencyCeiling
+                    : (Number(m.contingencyCeiling) || (rated + 3000));
                 const baseHour = (typeof m.baseLaserHour === 'number' && !isNaN(m.baseLaserHour)) ? m.baseLaserHour : (typeof m.prevHour === 'number' && !isNaN(m.prevHour) ? m.prevHour : null);
                 let baseTs = (m.baseTimestamp && !isNaN(new Date(m.baseTimestamp).getTime()))
                     ? m.baseTimestamp
@@ -227,6 +230,7 @@ export const StorageService = {
                     serialNo: m.laserSerialNo || (serialNo ? `${serialNo}-L1` : 'LS-101'),
                     ratedLife: rated,
                     warningLife: warn,
+                    contingencyCeiling: contingency,
                     baseLaserHour: baseHour,
                     baseTimestamp: baseTs,
                     runtimeState: (!baseTs || baseHour === null) ? 'BASELINE_REQUIRED' : 'NORMAL',
@@ -237,7 +241,10 @@ export const StorageService = {
                 // Ensure every laser in array is preserved correctly without fabricating timestamps
                 lasers = lasers.map((laser, idx) => {
                     const lRated = Number(laser.ratedLife) || 25000;
-                    const lWarn = Number(laser.warningLife) || Math.floor(lRated * 0.8);
+                    const lWarn = Number(laser.warningLife) || Math.floor(laser.warningLife) || Math.floor(lRated * 0.8);
+                    const lContingency = (typeof laser.contingencyCeiling === 'number' && !isNaN(laser.contingencyCeiling))
+                        ? laser.contingencyCeiling
+                        : (Number(laser.contingencyCeiling) || (lRated + 3000));
                     const lBase = (typeof laser.baseLaserHour === 'number' && !isNaN(laser.baseLaserHour)) ? laser.baseLaserHour : null;
                     const lTs = (laser.baseTimestamp && !isNaN(new Date(laser.baseTimestamp).getTime())) ? laser.baseTimestamp : null;
 
@@ -247,6 +254,7 @@ export const StorageService = {
                         serialNo: laser.serialNo || `${serialNo}-L${idx + 1}`,
                         ratedLife: lRated,
                         warningLife: lWarn,
+                        contingencyCeiling: lContingency,
                         baseLaserHour: lBase,
                         baseTimestamp: lTs,
                         runtimeState: (!lTs || lBase === null) ? 'BASELINE_REQUIRED' : (laser.runtimeState || 'NORMAL'),
