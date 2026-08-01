@@ -659,20 +659,21 @@ function setupEventListeners() {
 
     const updateLaserModalPreview = () => {
         if (!DOM.laserModalPreviewText) return;
-        const baseHour = Number(DOM.laserModalBaseHour ? DOM.laserModalBaseHour.value : 0) || 0;
+        const hourVal = DOM.laserModalBaseHour ? DOM.laserModalBaseHour.value : '';
         const tsVal = DOM.laserModalTimestamp ? DOM.laserModalTimestamp.value : '';
         const evalTime = getEvalTime();
 
-        if (!tsVal) {
-            DOM.laserModalPreviewText.textContent = `Estimated now: ${baseHour.toFixed(1)} hrs (0.0 days elapsed)`;
+        if (hourVal === '' || !tsVal) {
+            DOM.laserModalPreviewText.textContent = `⚠️ Baseline Required: Record captured hour & date/time to establish baseline.`;
             return;
         }
 
+        const baseHour = Number(hourVal) || 0;
         const baseMs = new Date(tsVal).getTime();
         const evalMs = evalTime.getTime();
 
         if (isNaN(baseMs)) {
-            DOM.laserModalPreviewText.textContent = `Estimated now: ${baseHour.toFixed(1)} hrs (0.0 days elapsed)`;
+            DOM.laserModalPreviewText.textContent = `⚠️ Baseline Required: Invalid timestamp format.`;
             return;
         }
 
@@ -695,12 +696,14 @@ function setupEventListeners() {
             const laser = machine.lasers.find(l => l.id === laserId);
             if (!laser) return;
 
-            if (DOM.laserModalTitle) DOM.laserModalTitle.textContent = `Edit ${laser.name}`;
+            const isBaselineReq = !laser.baseTimestamp || isNaN(new Date(laser.baseTimestamp).getTime()) || laser.baseLaserHour === null || laser.baseLaserHour === undefined;
+
+            if (DOM.laserModalTitle) DOM.laserModalTitle.textContent = isBaselineReq ? `Set Baseline - ${laser.name}` : `Edit ${laser.name}`;
             if (DOM.laserModalId) DOM.laserModalId.value = laser.id;
             if (DOM.laserModalName) DOM.laserModalName.value = laser.name || '';
             if (DOM.laserModalSerial) DOM.laserModalSerial.value = laser.serialNo || '';
-            if (DOM.laserModalBaseHour) DOM.laserModalBaseHour.value = laser.baseLaserHour || 0;
-            if (DOM.laserModalTimestamp) DOM.laserModalTimestamp.value = safeToDatetimeLocal(laser.baseTimestamp || getEvalTime().toISOString());
+            if (DOM.laserModalBaseHour) DOM.laserModalBaseHour.value = (typeof laser.baseLaserHour === 'number' && !isNaN(laser.baseLaserHour)) ? laser.baseLaserHour : '';
+            if (DOM.laserModalTimestamp) DOM.laserModalTimestamp.value = safeToDatetimeLocal(laser.baseTimestamp, '');
             if (DOM.laserModalWarning) DOM.laserModalWarning.value = laser.warningLife || 20000;
             if (DOM.laserModalRated) DOM.laserModalRated.value = laser.ratedLife || 25000;
             if (DOM.laserModalContingency) DOM.laserModalContingency.value = laser.contingencyCeiling || 28000;
@@ -778,9 +781,9 @@ function setupEventListeners() {
             const lid = DOM.laserModalId ? DOM.laserModalId.value : '';
             const lname = DOM.laserModalName ? DOM.laserModalName.value.trim() : 'Laser Head';
             const lserial = DOM.laserModalSerial ? DOM.laserModalSerial.value.trim() : 'SN-N/A';
-            const lbaseHour = Number(DOM.laserModalBaseHour ? DOM.laserModalBaseHour.value : 0) || 0;
+            const hourInput = DOM.laserModalBaseHour ? DOM.laserModalBaseHour.value : '';
+            const lbaseHour = (hourInput !== '' && !isNaN(Number(hourInput))) ? Number(hourInput) : null;
             const ltsInput = DOM.laserModalTimestamp ? DOM.laserModalTimestamp.value : '';
-            const lbaseTs = safeToISOString(ltsInput, getEvalTime().toISOString());
             const lwarning = Number(DOM.laserModalWarning ? DOM.laserModalWarning.value : 20000) || 20000;
             const lrated = Number(DOM.laserModalRated ? DOM.laserModalRated.value : 25000) || 25000;
             const lcontingency = Number(DOM.laserModalContingency ? DOM.laserModalContingency.value : 28000) || (lrated + 3000);
@@ -789,6 +792,13 @@ function setupEventListeners() {
                 // Update existing laser
                 const existingLaser = machine.lasers.find(l => l.id === lid);
                 if (existingLaser) {
+                    let lbaseTs = null;
+                    if (existingLaser.baseTimestamp && safeToDatetimeLocal(existingLaser.baseTimestamp) === ltsInput) {
+                        lbaseTs = existingLaser.baseTimestamp; // Preserve exact byte-for-byte timestamp if unmodified
+                    } else if (ltsInput) {
+                        lbaseTs = safeToISOString(ltsInput, null);
+                    }
+
                     existingLaser.name = lname;
                     existingLaser.serialNo = lserial;
                     existingLaser.baseLaserHour = lbaseHour;
@@ -799,6 +809,7 @@ function setupEventListeners() {
                 }
             } else {
                 // Add new laser
+                const lbaseTs = ltsInput ? safeToISOString(ltsInput, null) : null;
                 const newLaser = {
                     id: `${machine.id}-L${Date.now().toString().slice(-4)}`,
                     name: lname,

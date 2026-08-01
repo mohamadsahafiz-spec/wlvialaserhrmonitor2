@@ -216,10 +216,10 @@ export const StorageService = {
                 // Migrate single laser machine object into multi-laser structure
                 const rated = Number(m.ratedLife) || 25000;
                 const warn = Number(m.warningLife) || Math.floor(rated * 0.8);
-                const baseHour = typeof m.baseLaserHour === 'number' ? m.baseLaserHour : (Number(m.prevHour) || 0);
+                const baseHour = (typeof m.baseLaserHour === 'number' && !isNaN(m.baseLaserHour)) ? m.baseLaserHour : (typeof m.prevHour === 'number' && !isNaN(m.prevHour) ? m.prevHour : null);
                 let baseTs = (m.baseTimestamp && !isNaN(new Date(m.baseTimestamp).getTime()))
                     ? m.baseTimestamp
-                    : ((m.prevDate && !isNaN(new Date(m.prevDate).getTime())) ? new Date(m.prevDate).toISOString() : new Date().toISOString());
+                    : ((m.prevDate && !isNaN(new Date(m.prevDate).getTime())) ? new Date(m.prevDate).toISOString() : null);
 
                 lasers = [{
                     id: `${id}-L1`,
@@ -229,16 +229,17 @@ export const StorageService = {
                     warningLife: warn,
                     baseLaserHour: baseHour,
                     baseTimestamp: baseTs,
+                    runtimeState: (!baseTs || baseHour === null) ? 'BASELINE_REQUIRED' : 'NORMAL',
                     lastRecalibrationDate: m.lastRecalibrationDate || baseTs,
                     calibrationHistory: Array.isArray(m.calibrationHistory) ? m.calibrationHistory : []
                 }];
             } else {
-                // Ensure every laser in array is fully valid
+                // Ensure every laser in array is preserved correctly without fabricating timestamps
                 lasers = lasers.map((laser, idx) => {
                     const lRated = Number(laser.ratedLife) || 25000;
                     const lWarn = Number(laser.warningLife) || Math.floor(lRated * 0.8);
-                    const lBase = typeof laser.baseLaserHour === 'number' ? laser.baseLaserHour : 0;
-                    const lTs = (laser.baseTimestamp && !isNaN(new Date(laser.baseTimestamp).getTime())) ? laser.baseTimestamp : new Date().toISOString();
+                    const lBase = (typeof laser.baseLaserHour === 'number' && !isNaN(laser.baseLaserHour)) ? laser.baseLaserHour : null;
+                    const lTs = (laser.baseTimestamp && !isNaN(new Date(laser.baseTimestamp).getTime())) ? laser.baseTimestamp : null;
 
                     return {
                         id: laser.id || `${id}-L${idx + 1}`,
@@ -248,6 +249,7 @@ export const StorageService = {
                         warningLife: lWarn,
                         baseLaserHour: lBase,
                         baseTimestamp: lTs,
+                        runtimeState: (!lTs || lBase === null) ? 'BASELINE_REQUIRED' : (laser.runtimeState || 'NORMAL'),
                         lastRecalibrationDate: laser.lastRecalibrationDate || lTs,
                         calibrationHistory: Array.isArray(laser.calibrationHistory) ? laser.calibrationHistory : []
                     };

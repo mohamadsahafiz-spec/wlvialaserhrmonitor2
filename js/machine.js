@@ -26,10 +26,14 @@ export const MachineController = {
         if (headerName) headerName.textContent = machine.machineName || machine.machineNo;
         if (headerModel) headerModel.textContent = `${machine.model} • ${lasersCount} Laser ${lasersCount === 1 ? 'Head' : 'Heads'} • SN: ${machine.serialNo || 'N/A'}`;
         if (headerStatus) {
-            const statusClass = metrics.status === 'SAFE' ? 'color-safe' : (metrics.status === 'WARNING' ? 'color-warning' : 'color-alarm');
-            const bgClass = metrics.status === 'SAFE' ? 'bg-safe' : (metrics.status === 'WARNING' ? 'bg-warning' : 'bg-alarm');
+            let statusClass = 'color-safe';
+            let bgClass = 'bg-safe';
+            if (metrics.status === 'WARNING') { statusClass = 'color-warning'; bgClass = 'bg-warning'; }
+            else if (metrics.status === 'ALARM') { statusClass = 'color-alarm'; bgClass = 'bg-alarm'; }
+            else if (metrics.status === 'BASELINE_REQUIRED') { statusClass = 'color-baseline'; bgClass = 'bg-baseline'; }
+
             headerStatus.className = `mc-status-badge ${statusClass}`;
-            headerStatus.innerHTML = `<div class="mc-led ${bgClass} led-solid"></div> ${metrics.status}`;
+            headerStatus.innerHTML = `<div class="mc-led ${bgClass} led-solid"></div> ${metrics.status === 'BASELINE_REQUIRED' ? 'BASELINE REQUIRED' : metrics.status}`;
         }
 
         // Read-only Machine Profile Cards
@@ -61,19 +65,23 @@ export const MachineController = {
 
         if (heroCritName) heroCritName.textContent = crit.name;
         if (heroCritSerial) heroCritSerial.textContent = `SN: ${crit.serialNo || 'N/A'}`;
-        if (heroCritText) heroCritText.textContent = crit.status;
+        if (heroCritText) heroCritText.textContent = crit.status === 'BASELINE_REQUIRED' ? 'BASELINE REQUIRED' : crit.status;
         if (heroCritBadge) {
-            const statusClass = crit.status === 'SAFE' ? 'color-safe' : (crit.status === 'WARNING' ? 'color-warning' : 'color-alarm');
-            const bgClass = crit.status === 'SAFE' ? 'bg-safe' : (crit.status === 'WARNING' ? 'bg-warning' : 'bg-alarm');
+            let statusClass = 'color-safe';
+            let bgClass = 'bg-safe';
+            if (crit.status === 'WARNING') { statusClass = 'color-warning'; bgClass = 'bg-warning'; }
+            else if (crit.status === 'ALARM') { statusClass = 'color-alarm'; bgClass = 'bg-alarm'; }
+            else if (crit.status === 'BASELINE_REQUIRED') { statusClass = 'color-baseline'; bgClass = 'bg-baseline'; }
+
             heroCritBadge.className = `mc-status-badge ${statusClass}`;
             if (heroCritLed) heroCritLed.className = `mc-led ${bgClass} led-solid`;
         }
 
-        if (DOM.currentHour) DOM.currentHour.textContent = `${crit.currentHour} hrs`;
+        if (DOM.currentHour) DOM.currentHour.textContent = crit.currentHour !== null && crit.currentHour !== '—' ? `${crit.currentHour} hrs` : '—';
         if (DOM.currentAge) DOM.currentAge.textContent = `Critical: ${crit.name}`;
         
         if (DOM.healthPercent) {
-            DOM.healthPercent.textContent = crit.isContingencyActive ? '0%' : crit.formattedLifeRemaining;
+            DOM.healthPercent.textContent = crit.baselineRequired ? '—' : (crit.isContingencyActive ? '0%' : crit.formattedLifeRemaining);
         }
 
         // Populate Configuration Tab fields
@@ -90,8 +98,19 @@ export const MachineController = {
         const warnBanner = document.getElementById('mach-warning-banner');
         const warnBannerText = document.getElementById('mach-warning-banner-text');
         if (warnBanner) {
-            if (metrics.status === 'WARNING' && !crit.isContingencyActive) {
+            if (metrics.status === 'BASELINE_REQUIRED' || crit.baselineRequired) {
                 warnBanner.style.display = 'flex';
+                warnBanner.style.borderColor = '#3b82f6';
+                warnBanner.style.background = 'rgba(59, 130, 246, 0.15)';
+                warnBanner.style.color = '#3b82f6';
+                if (warnBannerText) {
+                    warnBannerText.textContent = "Record the current physical laser hour-meter reading and capture date/time to begin automatic runtime estimation.";
+                }
+            } else if (metrics.status === 'WARNING' && !crit.isContingencyActive) {
+                warnBanner.style.display = 'flex';
+                warnBanner.style.borderColor = 'var(--yellow)';
+                warnBanner.style.background = 'rgba(251, 191, 36, 0.15)';
+                warnBanner.style.color = 'var(--yellow)';
                 if (warnBannerText) {
                     warnBannerText.textContent = `REPLACEMENT PLANNING REQUIRED • RECOMMENDED LIFE LIMIT APPROACHING (${crit.remainingTotal} hrs remaining)`;
                 }
@@ -163,17 +182,28 @@ export const MachineController = {
             let badgeClass = 'color-safe', dotColor = 'var(--green)';
             if (lm.status === 'WARNING') { badgeClass = 'color-warning'; dotColor = 'var(--yellow)'; }
             if (lm.status === 'ALARM') { badgeClass = 'color-alarm'; dotColor = 'var(--red)'; }
+            if (lm.status === 'BASELINE_REQUIRED') { badgeClass = 'color-baseline'; dotColor = '#3b82f6'; }
 
             const card = document.createElement('div');
             card.className = 'laser-head-card glass-panel';
 
-            const formatHrs = Math.abs(lm.remainingTotal);
-            const remainText = lm.remainingTotal < 0 ? `-${formatHrs} hrs` : `${formatHrs} hrs`;
+            const currentHrsText = lm.currentHour !== null && lm.currentHour !== '—' ? `${lm.currentHour} hrs` : '—';
+            let remainText = '—';
+            if (lm.remainingTotal !== null && lm.remainingTotal !== '—') {
+                const formatHrs = Math.abs(lm.remainingTotal);
+                remainText = lm.remainingTotal < 0 ? `-${formatHrs} hrs` : `${formatHrs} hrs`;
+            }
 
             const contingencyInfoHtml = lm.isContingencyActive ? `
                 <div style="margin-top: 10px; padding: 8px 10px; background: rgba(239, 68, 68, 0.15); border: 1px solid var(--red); border-radius: 6px; font-size: 11px; color: #fca5a5; font-weight: 700; line-height: 1.4;">
                     <div style="color: var(--red); font-weight: 800; margin-bottom: 2px;">🚨 RECOMMENDED LIFE EXCEEDED</div>
                     Exceeded By: <strong>${lm.hoursExceeded} hrs</strong> | Contingency Margin: <strong>${lm.contingencyMargin} hrs</strong>
+                </div>
+            ` : '';
+
+            const baselineInfoHtml = lm.status === 'BASELINE_REQUIRED' ? `
+                <div style="margin-top: 10px; padding: 8px 10px; background: rgba(59, 130, 246, 0.15); border: 1px solid #3b82f6; border-radius: 6px; font-size: 11px; color: #93c5fd; font-weight: 600; line-height: 1.4;">
+                    Record the current physical laser hour-meter reading and capture date/time to begin automatic runtime estimation.
                 </div>
             ` : '';
 
@@ -185,14 +215,14 @@ export const MachineController = {
                     </div>
                     <div class="mc-status-badge ${badgeClass}" style="border-color:${dotColor}40;">
                         <div class="mc-led" style="background:${dotColor}; box-shadow: 0 0 8px ${dotColor}"></div>
-                        ${lm.status}
+                        ${lm.status === 'BASELINE_REQUIRED' ? 'BASELINE REQUIRED' : lm.status}
                     </div>
                 </div>
 
                 <div class="lhc-stats">
                     <div class="lhc-stat-item">
                         <span class="lhc-stat-label">Current Hour</span>
-                        <span class="lhc-stat-val">${lm.currentHour} hrs</span>
+                        <span class="lhc-stat-val">${currentHrsText}</span>
                     </div>
                     <div class="lhc-stat-item">
                         <span class="lhc-stat-label">Rated Life</span>
@@ -211,16 +241,23 @@ export const MachineController = {
                 <div class="lhc-progress-box">
                     <div class="lhc-progress-meta">
                         <span>Life Remaining</span>
-                        <strong style="color:${dotColor}">${lm.isContingencyActive ? '0%' : lm.formattedLifeRemaining}</strong>
+                        <strong style="color:${dotColor}">${lm.baselineRequired ? '—' : (lm.isContingencyActive ? '0%' : lm.formattedLifeRemaining)}</strong>
                     </div>
                     <div class="mini-health-track" style="width:100%; height:10px;">
-                        <div class="mini-health-fill" style="width:${lm.isContingencyActive ? 0 : lm.lifeRemainingPercent}%; background:${dotColor};"></div>
+                        <div class="mini-health-fill" style="width:${(lm.baselineRequired || lm.isContingencyActive) ? 0 : (lm.lifeRemainingPercent || 0)}%; background:${dotColor};"></div>
                     </div>
                 </div>
 
+                ${baselineInfoHtml}
                 ${contingencyInfoHtml}
 
                 <div class="lhc-actions">
+                    ${lm.status === 'BASELINE_REQUIRED' ? `
+                    <button class="btn btn-primary btn-sm btn-edit-laser" data-laser-id="${lm.id}" style="background:#3b82f6; border-color:#3b82f6;">
+                        <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        Set Baseline
+                    </button>
+                    ` : `
                     <button class="btn btn-secondary btn-sm btn-recal-laser" data-laser-id="${lm.id}">
                         <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
                         Recalibrate
@@ -229,6 +266,7 @@ export const MachineController = {
                         <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         Edit
                     </button>
+                    `}
                     ${laserList.length > 1 ? `
                     <button class="btn btn-icon-danger btn-delete-laser" data-laser-id="${lm.id}" title="Remove Laser Head">
                         <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>

@@ -10,7 +10,7 @@ export function formatHours(val) {
     return String(Math.round(num));
 }
 
-export function safeToISOString(val, fallback = new Date().toISOString()) {
+export function safeToISOString(val, fallback = null) {
     if (!val) return fallback;
     try {
         const date = new Date(val);
