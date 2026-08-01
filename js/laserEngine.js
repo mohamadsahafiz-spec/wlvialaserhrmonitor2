@@ -1,9 +1,25 @@
 /* =====================================================
    LASER ENGINE (laserEngine.js)
-   Calculation engine for laser operating hours, remaining
-   lifetime, health %, deviation analysis, accuracy,
+   Calculation engine for multi-laser operating hours, remaining
+   lifetime %, worst-state status aggregation, accuracy,
    and recalibration logic.
    ===================================================== */
+
+/**
+ * Helper: Format Life Remaining percentage according to system precision rules:
+ * - >= 10%: Whole % (e.g., 53%)
+ * - 1% - 10%: 1 decimal place (e.g., 4.8%)
+ * - < 1% and > 0%: 1 decimal place (e.g., 0.5%). Never round down positive values to 0%.
+ * - <= 0%: 0%
+ */
+export function formatLifeRemainingPercent(val) {
+    const p = Number(val);
+    if (isNaN(p) || p <= 0) return '0%';
+    if (p >= 10) return Math.round(p) + '%';
+    // 0 < p < 10
+    const str = p.toFixed(1);
+    return str.endsWith('.0') ? Math.round(p) + '%' : str + '%';
+}
 
 export const LaserEngine = {
     /**
@@ -28,6 +44,7 @@ export const LaserEngine = {
 
     /**
      * Calculate remaining operating hours before rated life limit.
+     * Allowed to be negative if overdue!
      */
     calculateRemainingHours(currentHour, ratedLife) {
         const rated = Number(ratedLife) || 25000;
@@ -80,19 +97,25 @@ export const LaserEngine = {
     },
 
     /**
-     * Calculate health consumption percentage against rated life limit (0 - 100%).
+     * Calculate Life Remaining Percentage:
+     * Life Remaining % = (Remaining Hours / Rated Lifetime) * 100
+     * Clamped between 0% and 100%.
      */
-    calculateHealthPercent(currentHour, ratedLife) {
+    calculateLifeRemainingPercent(remainingHours, ratedLife) {
         const rated = Number(ratedLife) || 25000;
-        const curr = Number(currentHour) || 0;
-        if (rated <= 0) return 100;
-        return Math.max(0, Math.min(100, (curr / rated) * 100));
+        const rem = Number(remainingHours);
+        if (rated <= 0 || rem <= 0) return 0;
+        const rawPct = (rem / rated) * 100;
+        return Math.max(0, Math.min(100, rawPct));
     },
 
     /**
-     * Calculate machine health status based on current laser hour and rated/warning limits.
+     * Determine laser status based on current laser hour and rated/warning limits.
+     * - ALARM: Current hour >= Rated life (Remaining hours <= 0)
+     * - WARNING: Current hour >= Warning life
+     * - SAFE: Current hour < Warning life
      */
-    calculateMachineStatus(currentHour, ratedLife, warningLife) {
+    calculateLaserStatus(currentHour, ratedLife, warningLife) {
         const curr = Number(currentHour) || 0;
         const rated = Number(ratedLife) || 25000;
         const warn = Number(warningLife) || Math.floor(rated * 0.8);
@@ -107,9 +130,9 @@ export const LaserEngine = {
     },
 
     /**
-     * Calculate equivalent machine age in Years and Days based on current laser hour.
+     * Calculate equivalent laser age in Years and Days based on current laser hour.
      */
-    calculateMachineAge(currentHour) {
+    calculateLaserAge(currentHour) {
         const hrs = Number(currentHour) || 0;
         const years = Math.floor(hrs / 8760);
         const remainDays = Math.floor((hrs % 8760) / 24);
@@ -147,9 +170,6 @@ export const LaserEngine = {
 
     /**
      * Determine advisory status for next recommended recalibration.
-     * 0–30 days -> Status: No Action Required
-     * 31–90 days -> Status: Verify During Next Service Visit
-     * >90 days -> Status: Recalibration Recommended
      */
     calculateRecalibrationRecommendation(daysSinceRecalibration) {
         const days = Number(daysSinceRecalibration) || 0;
@@ -195,12 +215,7 @@ export const LaserEngine = {
     },
 
     /**
-     * Rating scale based on deviation absolute difference:
-     * 0–10 hrs -> ★★★★★ Excellent
-     * 11–25 hrs -> ★★★★☆ Very Good
-     * 26–50 hrs -> ★★★☆☆ Good
-     * 51–100 hrs -> ★★☆☆☆ Fair
-     * >100 hrs -> ★☆☆☆☆ Poor
+     * Rating scale based on deviation absolute difference.
      */
     calculateDeviationRating(differenceHours) {
         const absDiff = Math.abs(Number(differenceHours) || 0);
@@ -223,67 +238,169 @@ export const LaserEngine = {
         } else {
             rating = '★☆☆☆☆ Poor';
             label = 'Poor';
-            warningMsg = 'Machine likely experienced extended downtime. Baseline has been updated successfully.';
+            warningMsg = 'Laser head experienced extended downtime or deviation. Baseline updated.';
         }
 
         return { absDiff, rating, label, warningMsg };
     },
 
     /**
-     * Full machine metrics calculation. Returns all health and lifetime indicators.
-     * Strictly delegates each calculation step to its dedicated function.
+     * Calculate metrics for an individual laser head.
      */
-    calculateMachineMetrics(machine, currentTime) {
+    calculateLaserMetrics(laser, currentTime) {
         const now = currentTime ? new Date(currentTime) : new Date();
-        const baseHour = Number(machine.baseLaserHour) || 0;
-        const baseTs = machine.baseTimestamp || now.toISOString();
-        const ratedLife = Number(machine.ratedLife) || 25000;
-        const warningLife = Number(machine.warningLife) || Math.floor(ratedLife * 0.8);
+        const baseHour = Number(laser.baseLaserHour) || 0;
+        const baseTs = laser.baseTimestamp || now.toISOString();
+        const ratedLife = Number(laser.ratedLife) || 25000;
+        const warningLife = Number(laser.warningLife) || Math.floor(ratedLife * 0.8);
 
         const currentHour = this.calculateEstimatedHour(baseHour, baseTs, now);
-        const runningHours = Math.max(0, (now.getTime() - new Date(baseTs).getTime()) / (1000 * 60 * 60));
-        const daysPassed = Math.floor(runningHours / 24);
-
         const remainingTotal = this.calculateRemainingHours(currentHour, ratedLife);
+        const lifeRemainingPercent = this.calculateLifeRemainingPercent(remainingTotal, ratedLife);
+        const formattedLifeRemaining = formatLifeRemainingPercent(lifeRemainingPercent);
+        const status = this.calculateLaserStatus(currentHour, ratedLife, warningLife);
         const remainingDaysInfo = this.calculateRemainingDaysInfo(remainingTotal, ratedLife, warningLife);
-        const status = this.calculateMachineStatus(currentHour, ratedLife, warningLife);
-        const healthPercent = this.calculateHealthPercent(currentHour, ratedLife);
-        const age = this.calculateMachineAge(currentHour);
+        const age = this.calculateLaserAge(currentHour);
 
-        const daysSinceRecal = this.calculateDaysSinceRecalibration(machine.lastRecalibrationDate || baseTs, now);
+        const daysSinceRecal = this.calculateDaysSinceRecalibration(laser.lastRecalibrationDate || baseTs, now);
         const accuracy = this.calculateAccuracy(daysSinceRecal);
         const recalRecommendation = this.calculateRecalibrationRecommendation(daysSinceRecal);
-        const nextRecalDate = this.calculateNextRecalibrationDate(machine.lastRecalibrationDate || baseTs);
+        const nextRecalDate = this.calculateNextRecalibrationDate(laser.lastRecalibrationDate || baseTs);
         const eolDate = this.calculateEstimatedEndOfLifeDate(currentHour, ratedLife, now);
 
         return {
+            id: laser.id,
+            name: laser.name || 'Laser Head',
+            serialNo: laser.serialNo || '',
+            baseLaserHour: baseHour,
+            baseTimestamp: baseTs,
+            ratedLife,
+            warningLife,
             currentHour: Math.round(currentHour * 10) / 10,
             currentHourRaw: currentHour,
-            runningHours: Math.round(runningHours * 10) / 10,
-            daysPassed,
             remainingTotal: Math.round(remainingTotal * 10) / 10,
-            remainingDaysInfo,
+            lifeRemainingPercent,
+            formattedLifeRemaining,
             status,
-            healthPercent: Math.round(healthPercent * 10) / 10,
+            remainingDaysInfo,
             daysSinceRecal,
             accuracy,
             recalRecommendation,
             nextRecalDate,
             eolDate,
             age,
-            lastRecalibrationDate: machine.lastRecalibrationDate || baseTs
+            lastRecalibrationDate: laser.lastRecalibrationDate || baseTs,
+            calibrationHistory: Array.isArray(laser.calibrationHistory) ? laser.calibrationHistory : []
         };
     },
 
     /**
-     * Perform Recalibration logic.
-     * Updates Base Laser Hour, Base Timestamp, and Last Recalibration Date.
-     * Stores record in Calibration History (latest 10 records).
+     * Calculate machine metrics across all of its laser heads.
+     * Uses "WORST STATE WINS" logic (ALARM > WARNING > SAFE) for overall machine status.
      */
-    executeRecalibration(machine, actualHour, reason, timestamp) {
+    calculateMachineMetrics(machine, currentTime) {
+        const now = currentTime ? new Date(currentTime) : new Date();
+
+        // Check if machine has lasers array
+        let lasers = Array.isArray(machine.lasers) && machine.lasers.length > 0 ? machine.lasers : [];
+
+        if (lasers.length === 0) {
+            // Fallback for single legacy machine format
+            const fallbackLaser = {
+                id: (machine.id || 'L-101') + '-L1',
+                name: 'Laser Head 1',
+                serialNo: machine.serialNo || '',
+                ratedLife: Number(machine.ratedLife) || 25000,
+                warningLife: Number(machine.warningLife) || Math.floor((Number(machine.ratedLife) || 25000) * 0.8),
+                baseLaserHour: Number(machine.baseLaserHour) || 0,
+                baseTimestamp: machine.baseTimestamp || now.toISOString(),
+                lastRecalibrationDate: machine.lastRecalibrationDate || now.toISOString(),
+                calibrationHistory: Array.isArray(machine.calibrationHistory) ? machine.calibrationHistory : []
+            };
+            lasers = [fallbackLaser];
+        }
+
+        const laserMetricsList = lasers.map(l => this.calculateLaserMetrics(l, now));
+
+        // Determine aggregate status (Worst State Wins: ALARM > WARNING > SAFE)
+        let safeCount = 0;
+        let warningCount = 0;
+        let alarmCount = 0;
+
+        laserMetricsList.forEach(lm => {
+            if (lm.status === 'ALARM') alarmCount++;
+            else if (lm.status === 'WARNING') warningCount++;
+            else safeCount++;
+        });
+
+        let machineStatus = 'SAFE';
+        if (alarmCount > 0) machineStatus = 'ALARM';
+        else if (warningCount > 0) machineStatus = 'WARNING';
+
+        // Identify most critical laser head (lowest life remaining % or worst status)
+        let mostCriticalLaser = laserMetricsList[0];
+        const statusPriority = { ALARM: 3, WARNING: 2, SAFE: 1 };
+
+        laserMetricsList.forEach(lm => {
+            const currentPri = statusPriority[mostCriticalLaser.status] || 0;
+            const targetPri = statusPriority[lm.status] || 0;
+
+            if (targetPri > currentPri) {
+                mostCriticalLaser = lm;
+            } else if (targetPri === currentPri && lm.lifeRemainingPercent < mostCriticalLaser.lifeRemainingPercent) {
+                mostCriticalLaser = lm;
+            }
+        });
+
+        // Calculate Average Life Remaining % across all lasers
+        const totalLifePct = laserMetricsList.reduce((acc, l) => acc + l.lifeRemainingPercent, 0);
+        const avgLifeRemaining = laserMetricsList.length > 0 ? totalLifePct / laserMetricsList.length : 0;
+        const formattedAvgLifeRemaining = formatLifeRemainingPercent(avgLifeRemaining);
+
+        return {
+            status: machineStatus,
+            totalLasers: laserMetricsList.length,
+            safeCount,
+            warningCount,
+            alarmCount,
+            avgLifeRemaining: Math.round(avgLifeRemaining * 10) / 10,
+            formattedAvgLifeRemaining,
+            laserMetricsList,
+            mostCriticalLaser,
+            // Backwards compatibility shortcuts mapped to most critical laser
+            currentHour: mostCriticalLaser.currentHour,
+            currentHourRaw: mostCriticalLaser.currentHourRaw,
+            remainingTotal: mostCriticalLaser.remainingTotal,
+            remainingDaysInfo: mostCriticalLaser.remainingDaysInfo,
+            lifeRemainingPercent: mostCriticalLaser.lifeRemainingPercent,
+            formattedLifeRemaining: mostCriticalLaser.formattedLifeRemaining,
+            accuracy: mostCriticalLaser.accuracy,
+            daysSinceRecal: mostCriticalLaser.daysSinceRecal,
+            recalRecommendation: mostCriticalLaser.recalRecommendation,
+            nextRecalDate: mostCriticalLaser.nextRecalDate,
+            eolDate: mostCriticalLaser.eolDate,
+            age: mostCriticalLaser.age,
+            lastRecalibrationDate: mostCriticalLaser.lastRecalibrationDate,
+            healthPercent: mostCriticalLaser.lifeRemainingPercent // backward compatibility alias
+        };
+    },
+
+    /**
+     * Perform Recalibration logic for a specific laser head in a machine.
+     */
+    executeRecalibration(machine, laserId, actualHour, reason, timestamp) {
         const recalTime = timestamp ? new Date(timestamp) : new Date();
         const recalISO = recalTime.toISOString();
-        const currentEstimated = this.calculateEstimatedHour(machine.baseLaserHour, machine.baseTimestamp, recalTime);
+
+        const lasers = Array.isArray(machine.lasers) ? [...machine.lasers] : [];
+        const laserIndex = lasers.findIndex(l => l.id === laserId) >= 0 ? lasers.findIndex(l => l.id === laserId) : 0;
+        const targetLaser = lasers[laserIndex];
+
+        if (!targetLaser) {
+            throw new Error(`Laser ${laserId} not found in machine`);
+        }
+
+        const currentEstimated = this.calculateEstimatedHour(targetLaser.baseLaserHour, targetLaser.baseTimestamp, recalTime);
         const diff = this.calculateDeviation(actualHour, currentEstimated);
         const ratingInfo = this.calculateDeviationRating(diff);
 
@@ -293,6 +410,8 @@ export const LaserEngine = {
         const historyRecord = {
             date: dateStr,
             time: timeStr,
+            laserId: targetLaser.id,
+            laserName: targetLaser.name,
             estimatedHour: Math.round(currentEstimated * 10) / 10,
             actualHour: Number(actualHour),
             difference: Math.round(diff * 10) / 10,
@@ -300,29 +419,103 @@ export const LaserEngine = {
             rating: ratingInfo.rating
         };
 
-        const existingHistory = Array.isArray(machine.calibrationHistory) ? machine.calibrationHistory : [];
-        const newHistory = [historyRecord, ...existingHistory].slice(0, 10);
+        const existingLaserHistory = Array.isArray(targetLaser.calibrationHistory) ? targetLaser.calibrationHistory : [];
+        const updatedLaserHistory = [historyRecord, ...existingLaserHistory].slice(0, 10);
 
-        const updatedMachine = {
-            ...machine,
+        lasers[laserIndex] = {
+            ...targetLaser,
             baseLaserHour: Number(actualHour),
             baseTimestamp: recalISO,
             lastRecalibrationDate: recalISO,
-            calibrationHistory: newHistory,
+            calibrationHistory: updatedLaserHistory
+        };
+
+        const updatedMachine = {
+            ...machine,
+            lasers,
             lastUpdated: recalISO
         };
 
         return {
             updatedMachine,
             analysis: {
+                laserName: targetLaser.name,
                 estimatedHour: Math.round(currentEstimated * 10) / 10,
                 actualHour: Number(actualHour),
                 difference: Math.round(diff * 10) / 10,
                 ratingInfo
             }
         };
+    },
+
+    /**
+     * Add a new laser head to a machine.
+     */
+    addLaserToMachine(machine, laserData) {
+        const lasers = Array.isArray(machine.lasers) ? [...machine.lasers] : [];
+        const newIndex = lasers.length + 1;
+        const newLaser = {
+            id: `${machine.id}-L${Date.now().toString().slice(-4)}`,
+            name: laserData.name || `Laser Head ${newIndex}`,
+            serialNo: laserData.serialNo || `${machine.serialNo || 'SN'}-L${newIndex}`,
+            ratedLife: Number(laserData.ratedLife) || 25000,
+            warningLife: Number(laserData.warningLife) || Math.floor((Number(laserData.ratedLife) || 25000) * 0.8),
+            baseLaserHour: Number(laserData.baseLaserHour) || 0,
+            baseTimestamp: laserData.baseTimestamp || new Date().toISOString(),
+            lastRecalibrationDate: laserData.baseTimestamp || new Date().toISOString(),
+            calibrationHistory: []
+        };
+
+        lasers.push(newLaser);
+        return {
+            ...machine,
+            lasers,
+            lastUpdated: new Date().toISOString()
+        };
+    },
+
+    /**
+     * Update an existing laser head parameters.
+     */
+    updateLaserInMachine(machine, laserId, laserData) {
+        const lasers = Array.isArray(machine.lasers) ? [...machine.lasers] : [];
+        const index = lasers.findIndex(l => l.id === laserId);
+        if (index === -1) return machine;
+
+        lasers[index] = {
+            ...lasers[index],
+            name: laserData.name || lasers[index].name,
+            serialNo: laserData.serialNo || lasers[index].serialNo,
+            ratedLife: Number(laserData.ratedLife) || lasers[index].ratedLife,
+            warningLife: Number(laserData.warningLife) || lasers[index].warningLife,
+            ...(typeof laserData.baseLaserHour === 'number' ? { baseLaserHour: laserData.baseLaserHour } : {})
+        };
+
+        return {
+            ...machine,
+            lasers,
+            lastUpdated: new Date().toISOString()
+        };
+    },
+
+    /**
+     * Delete a laser head from a machine (if > 1 laser exists).
+     */
+    deleteLaserFromMachine(machine, laserId) {
+        const lasers = Array.isArray(machine.lasers) ? [...machine.lasers] : [];
+        if (lasers.length <= 1) {
+            throw new Error('A machine must have at least one laser head.');
+        }
+
+        const filtered = lasers.filter(l => l.id !== laserId);
+        return {
+            ...machine,
+            lasers: filtered,
+            lastUpdated: new Date().toISOString()
+        };
     }
 };
 
 window.LaserEngine = LaserEngine;
+
 

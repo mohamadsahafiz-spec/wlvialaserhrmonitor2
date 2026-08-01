@@ -96,9 +96,23 @@ function initDOM() {
         btnCloseRecalModal: document.getElementById('btn-close-recal-modal'),
         btnCancelRecalModal: document.getElementById('btn-cancel-recal-modal'),
         btnSubmitRecalibrate: document.getElementById('btn-submit-recalibrate'),
+        recalLaserSelect: document.getElementById('recal-laser-select'),
         recalCurrentEstDisplay: document.getElementById('recal-current-est'),
         recalActualInput: document.getElementById('recal-actual-hour'),
         recalReasonSelect: document.getElementById('recal-reason'),
+
+        // Laser Head Modal
+        btnAddLaserHead: document.getElementById('btn-add-laser-head'),
+        laserModalOverlay: document.getElementById('laser-modal-overlay'),
+        btnCloseLaserModal: document.getElementById('btn-close-laser-modal'),
+        btnCancelLaserModal: document.getElementById('btn-cancel-laser-modal'),
+        btnSubmitLaserHead: document.getElementById('btn-submit-laser-head'),
+        laserModalTitle: document.getElementById('laser-modal-title'),
+        laserModalId: document.getElementById('laser-modal-id'),
+        laserModalName: document.getElementById('laser-modal-name'),
+        laserModalSerial: document.getElementById('laser-modal-serial'),
+        laserModalRated: document.getElementById('laser-modal-rated'),
+        laserModalBaseHour: document.getElementById('laser-modal-base-hour'),
 
         // Deviation Analysis Modal
         deviationOverlay: document.getElementById('deviation-modal-overlay'),
@@ -221,7 +235,7 @@ async function initApp() {
         } else if (DOM.viewSingle && !DOM.viewSingle.classList.contains('hidden') && AppState.currentMachineId) {
             const machine = AppState.machines.find(m => m.id === AppState.currentMachineId);
             if (machine) {
-                MachineController.renderSingleDashboard(machine, DOM, evalTime, true);
+                MachineController.renderSingleDashboard(machine, DOM, evalTime, true, getMachineCallbacks());
             }
         }
     }, 1000);
@@ -394,7 +408,15 @@ function showMachineDetail(id, cardElement) {
     const evalTime = getEvalTime();
     MachineController.renderMaintenanceLog(machine, DOM.maintTbody);
     MachineController.renderCalibrationHistory(machine, DOM.calibrationTbody);
-    MachineController.renderSingleDashboard(machine, DOM, evalTime);
+    MachineController.renderSingleDashboard(machine, DOM, evalTime, false, getMachineCallbacks());
+}
+
+function getMachineCallbacks() {
+    return {
+        onRecalibrateLaser: (mId, laserId) => openRecalibrateModalForLaser(mId, laserId),
+        onEditLaser: (mId, laserId) => openEditLaserModal(mId, laserId),
+        onDeleteLaser: (mId, laserId) => handleDeleteLaserHead(mId, laserId)
+    };
 }
 
 function showSettingsView() {
@@ -593,27 +615,165 @@ function setupEventListeners() {
     }
 
     // Secondary Action Triggers
-    
-    const openRecalibrateModal = () => {
+    const openRecalibrateModalForLaser = (mId, laserId) => {
         requireEngineerMode(() => {
-            const machine = AppState.machines.find(m => m.id === AppState.currentMachineId);
+            const machine = AppState.machines.find(m => m.id === (mId || AppState.currentMachineId));
             if (!machine) return;
 
-            const evalTime = getEvalTime();
-            const est = LaserEngine.calculateEstimatedHour(machine.baseLaserHour, machine.baseTimestamp, evalTime);
+            const lasers = Array.isArray(machine.lasers) && machine.lasers.length > 0 ? machine.lasers : [{
+                id: machine.id + '-L1',
+                name: 'Laser Head 1',
+                baseLaserHour: machine.baseLaserHour || 0,
+                baseTimestamp: machine.baseTimestamp || new Date().toISOString()
+            }];
 
-            if (DOM.recalCurrentEstDisplay) DOM.recalCurrentEstDisplay.textContent = `${Math.round(est * 10) / 10} hrs`;
-            if (DOM.recalActualInput) DOM.recalActualInput.value = Math.round(est);
-            if (DOM.recalReasonSelect) DOM.recalReasonSelect.value = 'Scheduled PM';
+            if (DOM.recalLaserSelect) {
+                DOM.recalLaserSelect.innerHTML = lasers.map(l => `<option value="${l.id}">${l.name || 'Laser Head'} (${l.serialNo || 'SN-N/A'})</option>`).join('');
+                if (laserId) DOM.recalLaserSelect.value = laserId;
+            }
 
+            const updateEstForSelectedLaser = () => {
+                const targetId = DOM.recalLaserSelect ? DOM.recalLaserSelect.value : (laserId || lasers[0].id);
+                const targetLaser = lasers.find(l => l.id === targetId) || lasers[0];
+                const evalTime = getEvalTime();
+                const est = LaserEngine.calculateEstimatedHour(targetLaser.baseLaserHour || 0, targetLaser.baseTimestamp || new Date().toISOString(), evalTime);
+
+                if (DOM.recalCurrentEstDisplay) DOM.recalCurrentEstDisplay.value = `${Math.round(est * 10) / 10} hrs`;
+                if (DOM.recalActualInput) DOM.recalActualInput.value = Math.round(est);
+            };
+
+            updateEstForSelectedLaser();
+
+            if (DOM.recalLaserSelect) {
+                DOM.recalLaserSelect.onchange = updateEstForSelectedLaser;
+            }
+
+            if (DOM.recalReasonSelect) DOM.recalReasonSelect.value = 'Manual Verification';
             UI.showModal(DOM.recalOverlay);
         });
     };
-    if (DOM.btnOpenRecalibrate) DOM.btnOpenRecalibrate.addEventListener('click', openRecalibrateModal);
+
+    const openEditLaserModal = (mId, laserId) => {
+        requireEngineerMode(() => {
+            const machine = AppState.machines.find(m => m.id === (mId || AppState.currentMachineId));
+            if (!machine || !Array.isArray(machine.lasers)) return;
+
+            const laser = machine.lasers.find(l => l.id === laserId);
+            if (!laser) return;
+
+            if (DOM.laserModalTitle) DOM.laserModalTitle.textContent = `Edit ${laser.name}`;
+            if (DOM.laserModalId) DOM.laserModalId.value = laser.id;
+            if (DOM.laserModalName) DOM.laserModalName.value = laser.name || '';
+            if (DOM.laserModalSerial) DOM.laserModalSerial.value = laser.serialNo || '';
+            if (DOM.laserModalRated) DOM.laserModalRated.value = laser.ratedLife || 25000;
+            if (DOM.laserModalBaseHour) DOM.laserModalBaseHour.value = laser.baseLaserHour || 0;
+
+            UI.showModal(DOM.laserModalOverlay);
+        });
+    };
+
+    const handleDeleteLaserHead = (mId, laserId) => {
+        requireEngineerMode(() => {
+            const machine = AppState.machines.find(m => m.id === (mId || AppState.currentMachineId));
+            if (!machine || !Array.isArray(machine.lasers) || machine.lasers.length <= 1) {
+                UI.showToast('Machine must maintain at least 1 Laser Head unit.', 'error');
+                return;
+            }
+
+            const targetLaser = machine.lasers.find(l => l.id === laserId);
+            const lname = targetLaser ? targetLaser.name : 'this laser head';
+
+            if (confirm(`Remove ${lname}? This action cannot be undone.`)) {
+                machine.lasers = machine.lasers.filter(l => l.id !== laserId);
+                StorageService.saveMachine(machine);
+                AppState.machines = StorageService.loadMachines();
+                UI.showToast(`Removed ${lname} ✓`, 'warning');
+
+                const evalTime = getEvalTime();
+                MachineController.renderSingleDashboard(machine, DOM, evalTime, false, getMachineCallbacks());
+            }
+        });
+    };
+
+    if (DOM.btnOpenRecalibrate) DOM.btnOpenRecalibrate.addEventListener('click', () => openRecalibrateModalForLaser());
 
     const btnOpenRecal2 = document.getElementById('btn-open-recalibrate-2');
     if (btnOpenRecal2) {
-        btnOpenRecal2.addEventListener('click', openRecalibrateModal);
+        btnOpenRecal2.addEventListener('click', () => openRecalibrateModalForLaser());
+    }
+
+    // Add Laser Head Button Handler
+    if (DOM.btnAddLaserHead) {
+        DOM.btnAddLaserHead.addEventListener('click', () => {
+            requireEngineerMode(() => {
+                const machine = AppState.machines.find(m => m.id === AppState.currentMachineId);
+                if (!machine) return;
+
+                const nextNum = (machine.lasers ? machine.lasers.length : 0) + 1;
+                if (DOM.laserModalTitle) DOM.laserModalTitle.textContent = `Add New Laser Head Unit`;
+                if (DOM.laserModalId) DOM.laserModalId.value = '';
+                if (DOM.laserModalName) DOM.laserModalName.value = `Laser Head #${nextNum}`;
+                if (DOM.laserModalSerial) DOM.laserModalSerial.value = `${machine.serialNo || 'BMD'}-L${nextNum}`;
+                if (DOM.laserModalRated) DOM.laserModalRated.value = machine.ratedLife || 25000;
+                if (DOM.laserModalBaseHour) DOM.laserModalBaseHour.value = 0;
+
+                UI.showModal(DOM.laserModalOverlay);
+            });
+        });
+    }
+
+    const closeLaserModal = () => UI.hideModal(DOM.laserModalOverlay);
+    if (DOM.btnCloseLaserModal) DOM.btnCloseLaserModal.addEventListener('click', closeLaserModal);
+    if (DOM.btnCancelLaserModal) DOM.btnCancelLaserModal.addEventListener('click', closeLaserModal);
+
+    if (DOM.btnSubmitLaserHead) {
+        DOM.btnSubmitLaserHead.addEventListener('click', () => {
+            const machine = AppState.machines.find(m => m.id === AppState.currentMachineId);
+            if (!machine) return;
+
+            if (!Array.isArray(machine.lasers)) machine.lasers = [];
+
+            const lid = DOM.laserModalId ? DOM.laserModalId.value : '';
+            const lname = DOM.laserModalName ? DOM.laserModalName.value.trim() : 'Laser Head';
+            const lserial = DOM.laserModalSerial ? DOM.laserModalSerial.value.trim() : 'SN-N/A';
+            const lrated = Number(DOM.laserModalRated ? DOM.laserModalRated.value : 25000) || 25000;
+            const lbaseHour = Number(DOM.laserModalBaseHour ? DOM.laserModalBaseHour.value : 0) || 0;
+            const nowISO = getEvalTime().toISOString();
+
+            if (lid) {
+                // Update existing laser
+                const existingLaser = machine.lasers.find(l => l.id === lid);
+                if (existingLaser) {
+                    existingLaser.name = lname;
+                    existingLaser.serialNo = lserial;
+                    existingLaser.ratedLife = lrated;
+                    existingLaser.warningLife = Math.floor(lrated * 0.8);
+                    existingLaser.baseLaserHour = lbaseHour;
+                }
+            } else {
+                // Add new laser
+                const newLaser = {
+                    id: `${machine.id}-L${Date.now().toString().slice(-4)}`,
+                    name: lname,
+                    serialNo: lserial,
+                    ratedLife: lrated,
+                    warningLife: Math.floor(lrated * 0.8),
+                    baseLaserHour: lbaseHour,
+                    baseTimestamp: nowISO,
+                    lastRecalibrationDate: nowISO,
+                    calibrationHistory: []
+                };
+                machine.lasers.push(newLaser);
+            }
+
+            StorageService.saveMachine(machine);
+            AppState.machines = StorageService.loadMachines();
+            closeLaserModal();
+            UI.showToast(`Saved ${lname} ✓`, 'success');
+
+            const evalTime = getEvalTime();
+            MachineController.renderSingleDashboard(machine, DOM, evalTime, false, getMachineCallbacks());
+        });
     }
 
     const btnEditConfig = document.getElementById('btn-edit-config-trigger');
@@ -695,8 +855,9 @@ function setupEventListeners() {
 
         const evalTime = getEvalTime();
         const reason = DOM.recalReasonSelect.value;
+        const selectedLaserId = DOM.recalLaserSelect ? DOM.recalLaserSelect.value : null;
 
-        const result = RecalibrationController.prepareRecalibration(machine, actualHour, reason, evalTime);
+        const result = RecalibrationController.prepareRecalibration(machine, selectedLaserId, actualHour, reason, evalTime);
         AppState.pendingRecalibration = result;
 
         if (DOM.devEstHourDisplay) DOM.devEstHourDisplay.textContent = `${result.analysis.estimatedHour} hrs`;

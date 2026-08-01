@@ -19,7 +19,7 @@ export const DashboardController = {
         if (!totalEl && !safeEl) return;
 
         let safeCount = 0, warnCount = 0, alarmCount = 0;
-        let sumHealth = 0, sumHours = 0;
+        let sumLifePct = 0, totalLasers = 0, criticalLasers = 0;
 
         machines.forEach(m => {
             const met = LaserEngine.calculateMachineMetrics(m, evalTime);
@@ -27,19 +27,24 @@ export const DashboardController = {
             else if (met.status === 'WARNING') warnCount++;
             else if (met.status === 'ALARM') alarmCount++;
 
-            sumHealth += met.healthPercent || 0;
-            sumHours += met.currentHour || 0;
+            if (Array.isArray(met.laserMetricsList)) {
+                met.laserMetricsList.forEach(lm => {
+                    sumLifePct += lm.lifeRemainingPercent || 0;
+                    totalLasers++;
+                    if (lm.status === 'ALARM') criticalLasers++;
+                });
+            }
         });
 
         const total = machines.length;
-        const avgHealth = total > 0 ? (sumHealth / total) : 0;
+        const avgLifeRemaining = totalLasers > 0 ? (sumLifePct / totalLasers) : 0;
 
         if (totalEl) totalEl.textContent = total;
         if (safeEl) safeEl.textContent = safeCount;
         if (warnEl) warnEl.textContent = warnCount;
         if (alarmEl) alarmEl.textContent = alarmCount;
-        if (avgHealthEl) avgHealthEl.textContent = `${Math.round(avgHealth * 10) / 10}%`;
-        if (totalHrsEl) totalHrsEl.textContent = `${Math.round(sumHours)} hrs`;
+        if (avgHealthEl) avgHealthEl.textContent = LaserEngine ? (window.formatLifeRemainingPercent ? window.formatLifeRemainingPercent(avgLifeRemaining) : `${Math.round(avgLifeRemaining)}%`) : `${Math.round(avgLifeRemaining)}%`;
+        if (totalHrsEl) totalHrsEl.textContent = `${totalLasers} Heads (${criticalLasers} Exceeded)`;
     },
 
     /**
@@ -89,9 +94,9 @@ export const DashboardController = {
                 case 'remain-desc':
                     return metricsB.remainingTotal - metricsA.remainingTotal;
                 case 'health-asc':
-                    return metricsA.healthPercent - metricsB.healthPercent;
+                    return metricsA.lifeRemainingPercent - metricsB.lifeRemainingPercent;
                 case 'health-desc':
-                    return metricsB.healthPercent - metricsA.healthPercent;
+                    return metricsB.lifeRemainingPercent - metricsA.lifeRemainingPercent;
                 case 'status-urgent': {
                     const statusOrder = { 'ALARM': 0, 'WARNING': 1, 'SAFE': 2 };
                     return (statusOrder[metricsA.status] ?? 3) - (statusOrder[metricsB.status] ?? 3);
@@ -123,8 +128,8 @@ export const DashboardController = {
                     if (daysVal) {
                         daysVal.textContent = metrics.remainingDaysInfo.formattedText;
                     }
-                    ChartRenderer.updateMiniHealthTrack(healthFill, metrics.healthPercent, metrics.status);
-                    if (healthText) healthText.textContent = `Health: ${Math.round(metrics.healthPercent)}%`;
+                    ChartRenderer.updateMiniHealthTrack(healthFill, metrics.lifeRemainingPercent, metrics.status);
+                    if (healthText) healthText.textContent = `Life Remaining: ${metrics.formattedLifeRemaining}`;
                 }
             });
             return;
@@ -158,10 +163,22 @@ export const DashboardController = {
                 }
             };
 
-            const formatHrs = Math.abs(metrics.remainingTotal);
-            const remainText = metrics.remainingTotal < 0 ? `-${formatHrs} hrs` : `${formatHrs} hrs`;
-            const recalDateStr = metrics.lastRecalibrationDate ? new Date(metrics.lastRecalibrationDate).toLocaleDateString() : 'N/A';
-            const remDaysText = metrics.remainingDaysInfo.formattedText;
+            const crit = metrics.mostCriticalLaser;
+            const formatHrs = Math.abs(crit.remainingTotal);
+            const remainText = crit.remainingTotal < 0 ? `-${formatHrs} hrs` : `${formatHrs} hrs`;
+            const recalDateStr = crit.lastRecalibrationDate ? new Date(crit.lastRecalibrationDate).toLocaleDateString() : 'N/A';
+            const remDaysText = crit.remainingDaysInfo.formattedText;
+
+            // Generate Laser Heads Indicator Row (Pills/Dots)
+            const laserPillsHtml = metrics.laserMetricsList.map((lm, idx) => {
+                let pColor = 'var(--green)';
+                if (lm.status === 'WARNING') pColor = 'var(--yellow)';
+                if (lm.status === 'ALARM') pColor = 'var(--red)';
+                return `<span class="laser-head-pill" title="${lm.name}: ${lm.currentHour} hrs, ${lm.formattedLifeRemaining} Life Remaining (${lm.status})">
+                    <span class="laser-pill-dot" style="background:${pColor}; box-shadow: 0 0 6px ${pColor};"></span>
+                    <span class="laser-pill-name">L${idx + 1}</span>
+                </span>`;
+            }).join('');
 
             card.innerHTML = `
                 <div class="mc-header">
@@ -177,32 +194,38 @@ export const DashboardController = {
                     </div>
                 </div>
 
+                <!-- Laser Heads Status Row -->
+                <div class="mc-lasers-row">
+                    <span class="mc-lasers-label">${metrics.totalLasers} Laser ${metrics.totalLasers === 1 ? 'Head' : 'Heads'}:</span>
+                    <div class="mc-lasers-pills">${laserPillsHtml}</div>
+                </div>
+
                 <div class="mc-stats">
                     <div class="mc-stat-item">
-                        <span class="mc-stat-label">Current Laser Hr</span>
-                        <span class="mc-stat-val mc-stat-val-current">${metrics.currentHour} hrs</span>
+                        <span class="mc-stat-label">Critical: ${crit.name}</span>
+                        <span class="mc-stat-val mc-stat-val-current">${crit.currentHour} hrs</span>
                     </div>
                     <div class="mc-stat-item">
                         <span class="mc-stat-label">Remaining Hr</span>
                         <span class="mc-stat-val mc-stat-val-remain ${badgeClass}">${remainText}</span>
                     </div>
                     <div class="mc-stat-item">
-                        <span class="mc-stat-label">Remaining Days</span>
-                        <span class="mc-stat-val mc-stat-val-days" style="font-size:15px; margin-top:4px;">${remDaysText}</span>
+                        <span class="mc-stat-label">Days to Limit</span>
+                        <span class="mc-stat-val mc-stat-val-days" style="font-size:14px; margin-top:4px;">${remDaysText}</span>
                     </div>
                 </div>
 
                 <div class="mc-extra-info">
-                    <div>Accuracy: <strong style="color:${metrics.accuracy.color}">${metrics.accuracy.label}</strong></div>
-                    <div>EOL Date: <strong>${metrics.eolDate}</strong></div>
+                    <div>Accuracy: <strong style="color:${crit.accuracy.color}">${crit.accuracy.label}</strong></div>
+                    <div>EOL Date: <strong>${crit.eolDate}</strong></div>
                     <div>Last Recal: <strong>${recalDateStr}</strong></div>
                 </div>
 
                 <div class="mc-footer">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span class="mc-health-text">Health: ${Math.round(metrics.healthPercent)}%</span>
-                        <div class="mini-health-track">
-                            <div class="mini-health-fill" style="width: ${metrics.healthPercent}%;"></div>
+                        <span class="mc-health-text">Life Remaining: <strong>${crit.formattedLifeRemaining}</strong></span>
+                        <div class="mini-health-track" title="Life Remaining: ${crit.formattedLifeRemaining}">
+                            <div class="mini-health-fill" style="width: ${crit.lifeRemainingPercent}%;"></div>
                         </div>
                     </div>
                     <div class="mc-card-actions">
@@ -217,7 +240,7 @@ export const DashboardController = {
             `;
 
             const fillEl = card.querySelector('.mini-health-fill');
-            ChartRenderer.updateMiniHealthTrack(fillEl, metrics.healthPercent, metrics.status);
+            ChartRenderer.updateMiniHealthTrack(fillEl, crit.lifeRemainingPercent, crit.status);
 
             const editBtn = card.querySelector('.btn-edit-card');
             if (editBtn) {

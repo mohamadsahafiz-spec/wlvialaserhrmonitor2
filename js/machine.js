@@ -10,10 +10,11 @@ export const MachineController = {
     /**
      * Render the single machine dashboard and update all metric displays.
      */
-    renderSingleDashboard(machine, DOM, evalTime, silent = false) {
+    renderSingleDashboard(machine, DOM, evalTime, silent = false, callbacks = {}) {
         if (!machine || !DOM) return;
 
         const metrics = LaserEngine.calculateMachineMetrics(machine, evalTime);
+        const lasersCount = metrics.totalLasers || (machine.lasers ? machine.lasers.length : 1);
 
         // Header Elements
         const headerNum = document.getElementById('mach-header-num');
@@ -22,7 +23,7 @@ export const MachineController = {
         const headerStatus = document.getElementById('mach-header-status');
         if (headerNum) headerNum.textContent = machine.machineNo;
         if (headerName) headerName.textContent = machine.machineName || machine.machineNo;
-        if (headerModel) headerModel.textContent = `${machine.model} • SN: ${machine.serialNo || 'N/A'}`;
+        if (headerModel) headerModel.textContent = `${machine.model} • ${lasersCount} Laser ${lasersCount === 1 ? 'Head' : 'Heads'} • SN: ${machine.serialNo || 'N/A'}`;
         if (headerStatus) {
             const statusClass = metrics.status === 'SAFE' ? 'color-safe' : (metrics.status === 'WARNING' ? 'color-warning' : 'color-alarm');
             const bgClass = metrics.status === 'SAFE' ? 'bg-safe' : (metrics.status === 'WARNING' ? 'bg-warning' : 'bg-alarm');
@@ -48,67 +49,148 @@ export const MachineController = {
         const machEol = document.getElementById('mach-eol-date');
         if (machEol) machEol.textContent = metrics.eolDate || 'N/A';
 
-        // Confidence Center
-        if (DOM.confEstimatedHour) UI.animateValue(DOM.confEstimatedHour, 0, metrics.currentHour, 800, " hrs");
-        if (DOM.confAccuracy) {
-            DOM.confAccuracy.textContent = metrics.accuracy.label;
-            DOM.confAccuracy.style.color = metrics.accuracy.color;
-        }
-        if (DOM.confLastRecal) {
-            DOM.confLastRecal.textContent = metrics.lastRecalibrationDate ?
-                new Date(metrics.lastRecalibrationDate).toLocaleDateString() + ' ' +
-                new Date(metrics.lastRecalibrationDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
-        }
-        if (DOM.confNextRecal) DOM.confNextRecal.textContent = metrics.nextRecalDate;
-        if (DOM.confStatus) {
-            DOM.confStatus.textContent = metrics.recalRecommendation.status;
-            DOM.confStatus.style.color = metrics.recalRecommendation.color;
-        }
+        // Top Summary Metric Cards (Mapped to most critical laser)
+        const crit = metrics.mostCriticalLaser;
+        if (DOM.currentHour) DOM.currentHour.textContent = `${crit.currentHour} hrs`;
+        if (DOM.currentAge) DOM.currentAge.textContent = `Critical: ${crit.name}`;
+        
+        if (DOM.healthPercent) DOM.healthPercent.textContent = crit.formattedLifeRemaining;
 
-        // Tab duplicate elements
-        const healthTabPercent = document.getElementById('health-tab-percent');
-        const confAccuracyTab = document.getElementById('conf-accuracy-tab');
-        const confAccuracyCalib = document.getElementById('conf-accuracy-calib');
-        const confLastRecal2 = document.getElementById('conf-last-recal-2');
-        const confNextRecal2 = document.getElementById('conf-next-recal-2');
-        if (healthTabPercent) UI.animateValue(healthTabPercent, 0, Math.round(metrics.healthPercent), 800, "%");
-        if (confAccuracyTab) {
-            confAccuracyTab.textContent = metrics.accuracy.label;
-            confAccuracyTab.style.color = metrics.accuracy.color;
-        }
-        if (confAccuracyCalib) {
-            confAccuracyCalib.textContent = metrics.accuracy.label;
-            confAccuracyCalib.style.color = metrics.accuracy.color;
-        }
-        if (confLastRecal2) {
-            confLastRecal2.textContent = metrics.lastRecalibrationDate ?
-                new Date(metrics.lastRecalibrationDate).toLocaleDateString() + ' ' +
-                new Date(metrics.lastRecalibrationDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A';
-        }
-        if (confNextRecal2) confNextRecal2.textContent = metrics.nextRecalDate;
-
-        // Metrics
-        if (DOM.currentHour) UI.animateValue(DOM.currentHour, 0, metrics.currentHour, 800, " hrs");
-        if (DOM.currentAge) DOM.currentAge.textContent = metrics.age.formattedText;
-        if (DOM.runningHour) UI.animateValue(DOM.runningHour, 0, metrics.runningHours, 800, " hrs");
-        if (DOM.runningDay) DOM.runningDay.textContent = metrics.daysPassed + " Days";
-
-        this.updateRemainingCardUI(metrics, DOM);
+        this.updateRemainingCardUI(crit, DOM);
         this.updateStatusCardUI(metrics.status, DOM);
 
-        if (DOM.progressBar) ChartRenderer.updateProgressBar(DOM.progressBar, metrics.healthPercent);
-        if (DOM.healthPercent) UI.animateValue(DOM.healthPercent, 0, Math.round(metrics.healthPercent), 800, "%");
+        if (DOM.progressBar) ChartRenderer.updateProgressBar(DOM.progressBar, crit.lifeRemainingPercent);
+
+        // Render Laser Heads Grid
+        this.renderLaserHeadsGrid(machine, metrics, evalTime, callbacks);
+
+        // Render Calibration & Maintenance History
+        const calibTable = document.getElementById('calibration-tbody');
+        if (calibTable) this.renderCalibrationHistory(machine, calibTable);
+
+        const maintTable = document.getElementById('maintenance-tbody');
+        if (maintTable) this.renderMaintenanceLog(machine, maintTable);
 
         if (!silent) {
             this.updateLegendsAndScales(machine, DOM);
         }
     },
 
-    updateRemainingCardUI(metrics, DOM) {
+    /**
+     * Render dynamic grid of individual laser heads for the machine.
+     */
+    renderLaserHeadsGrid(machine, machineMetrics, evalTime, callbacks = {}) {
+        const container = document.getElementById('laser-heads-grid');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        const laserList = machineMetrics.laserMetricsList || [];
+
+        laserList.forEach((lm, idx) => {
+            let badgeClass = 'color-safe', dotColor = 'var(--green)';
+            if (lm.status === 'WARNING') { badgeClass = 'color-warning'; dotColor = 'var(--yellow)'; }
+            if (lm.status === 'ALARM') { badgeClass = 'color-alarm'; dotColor = 'var(--red)'; }
+
+            const card = document.createElement('div');
+            card.className = 'laser-head-card glass-panel';
+
+            const formatHrs = Math.abs(lm.remainingTotal);
+            const remainText = lm.remainingTotal < 0 ? `-${formatHrs} hrs` : `${formatHrs} hrs`;
+
+            card.innerHTML = `
+                <div class="lhc-header">
+                    <div>
+                        <div class="lhc-title">${lm.name}</div>
+                        <div class="lhc-subtitle">SN: ${lm.serialNo}</div>
+                    </div>
+                    <div class="mc-status-badge ${badgeClass}" style="border-color:${dotColor}40;">
+                        <div class="mc-led" style="background:${dotColor}; box-shadow: 0 0 8px ${dotColor}"></div>
+                        ${lm.status}
+                    </div>
+                </div>
+
+                <div class="lhc-stats">
+                    <div class="lhc-stat-item">
+                        <span class="lhc-stat-label">Current Hour</span>
+                        <span class="lhc-stat-val">${lm.currentHour} hrs</span>
+                    </div>
+                    <div class="lhc-stat-item">
+                        <span class="lhc-stat-label">Rated Life</span>
+                        <span class="lhc-stat-val">${lm.ratedLife} hrs</span>
+                    </div>
+                    <div class="lhc-stat-item">
+                        <span class="lhc-stat-label">Remaining Hr</span>
+                        <span class="lhc-stat-val ${badgeClass}">${remainText}</span>
+                    </div>
+                    <div class="lhc-stat-item">
+                        <span class="lhc-stat-label">Accuracy Rating</span>
+                        <span class="lhc-stat-val" style="font-size:13px; margin-top:4px;">${lm.accuracy.label}</span>
+                    </div>
+                </div>
+
+                <div class="lhc-progress-box">
+                    <div class="lhc-progress-meta">
+                        <span>Life Remaining</span>
+                        <strong style="color:${dotColor}">${lm.formattedLifeRemaining}</strong>
+                    </div>
+                    <div class="mini-health-track" style="width:100%; height:10px;">
+                        <div class="mini-health-fill" style="width:${lm.lifeRemainingPercent}%; background:${dotColor};"></div>
+                    </div>
+                </div>
+
+                <div class="lhc-actions">
+                    <button class="btn btn-secondary btn-sm btn-recal-laser" data-laser-id="${lm.id}">
+                        <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                        Recalibrate
+                    </button>
+                    <button class="btn btn-secondary btn-sm btn-edit-laser" data-laser-id="${lm.id}">
+                        <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                        Edit
+                    </button>
+                    ${laserList.length > 1 ? `
+                    <button class="btn btn-icon-danger btn-delete-laser" data-laser-id="${lm.id}" title="Remove Laser Head">
+                        <svg class="icon" viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>` : ''}
+                </div>
+            `;
+
+            const recalBtn = card.querySelector('.btn-recal-laser');
+            if (recalBtn) {
+                recalBtn.onclick = () => {
+                    if (typeof callbacks.onRecalibrateLaser === 'function') {
+                        callbacks.onRecalibrateLaser(machine.id, lm.id);
+                    }
+                };
+            }
+
+            const editBtn = card.querySelector('.btn-edit-laser');
+            if (editBtn) {
+                editBtn.onclick = () => {
+                    if (typeof callbacks.onEditLaser === 'function') {
+                        callbacks.onEditLaser(machine.id, lm.id);
+                    }
+                };
+            }
+
+            const deleteBtn = card.querySelector('.btn-delete-laser');
+            if (deleteBtn) {
+                deleteBtn.onclick = () => {
+                    if (typeof callbacks.onDeleteLaser === 'function') {
+                        callbacks.onDeleteLaser(machine.id, lm.id);
+                    }
+                };
+            }
+
+            container.appendChild(card);
+        });
+    },
+
+    updateRemainingCardUI(critMetric, DOM) {
         if (!DOM.remainingHour || !DOM.remainingCard) return;
 
-        const remInfo = metrics.remainingDaysInfo;
-        const remainingTotal = metrics.remainingTotal;
+        const remInfo = critMetric.remainingDaysInfo;
+        const remainingTotal = critMetric.remainingTotal;
 
         DOM.remainingHour.className = "value";
         DOM.remainingCard.className = "card glass-panel";
@@ -141,7 +223,7 @@ export const MachineController = {
         }
 
         const formatHours = (remainingTotal < 0 ? "-" : "") + Math.abs(remainingTotal) + " hrs";
-        UI.animateValue(DOM.remainingHour, 0, Math.abs(metrics.remainingTotal), 800, " hrs");
+        DOM.remainingHour.textContent = formatHours;
         if (DOM.remainingDay) DOM.remainingDay.textContent = remInfo.daysVal + " " + remInfo.statusMsg;
     },
 
@@ -245,14 +327,33 @@ export const MachineController = {
     renderCalibrationHistory(machine, tbodyElement) {
         if (!tbodyElement) return;
         tbodyElement.innerHTML = '';
-        const history = Array.isArray(machine.calibrationHistory) ? machine.calibrationHistory : [];
+        
+        let allHistory = [];
+        if (Array.isArray(machine.calibrationHistory)) {
+            allHistory = allHistory.concat(machine.calibrationHistory.map(h => ({ ...h, laserName: h.laserName || 'Laser Head 1' })));
+        }
 
-        if (history.length === 0) {
-            tbodyElement.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--muted); padding: 18px;">No calibration records yet. Use "Recalibrate" to record actual meter hours.</td></tr>`;
+        if (Array.isArray(machine.lasers)) {
+            machine.lasers.forEach(l => {
+                if (Array.isArray(l.calibrationHistory)) {
+                    l.calibrationHistory.forEach(h => {
+                        if (!allHistory.some(existing => existing.date === h.date && existing.actualHour === h.actualHour)) {
+                            allHistory.push({ ...h, laserName: l.name || 'Laser Head' });
+                        }
+                    });
+                }
+            });
+        }
+
+        if (allHistory.length === 0) {
+            tbodyElement.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--muted); padding: 18px;">No calibration records yet. Use "Recalibrate" on a laser unit to record actual meter hours.</td></tr>`;
             return;
         }
 
-        history.forEach(rec => {
+        // Sort descending by date
+        allHistory.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+        allHistory.forEach(rec => {
             const tr = document.createElement('tr');
             let dateStr = 'N/A';
             if (rec.date) {
@@ -270,11 +371,12 @@ export const MachineController = {
 
             tr.innerHTML = `
                 <td>${dateStr}</td>
+                <td><strong style="color:var(--text)">${rec.laserName || 'Laser Head'}</strong></td>
                 <td><strong>${Number(rec.estimatedHour)} hrs</strong></td>
                 <td><strong>${Number(rec.actualHour)} hrs</strong></td>
                 <td style="color:${diffColor}; font-weight:700;">${diffText}</td>
                 <td>${rec.reason || 'Manual Verification'}</td>
-                <td style="color:var(--primary); font-weight:600;">${rec.rating || ''}</td>
+                <td><span class="badge badge-info" style="font-size:11px;">${rec.rating || 'OPTIMAL'}</span></td>
             `;
             tbodyElement.appendChild(tr);
         });

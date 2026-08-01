@@ -7,9 +7,9 @@ export const RecalibrationController = {
     /**
      * Compute deviation and prepare audit record for recalibration.
      */
-    prepareRecalibration(machine, actualHour, reason, evalTime) {
+    prepareRecalibration(machine, laserId, actualHour, reason, evalTime) {
         if (!machine) return null;
-        return LaserEngine.executeRecalibration(machine, actualHour, reason, evalTime);
+        return LaserEngine.executeRecalibration(machine, laserId, actualHour, reason, evalTime);
     },
 
     /**

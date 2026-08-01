@@ -16,17 +16,35 @@ function getFallbackMachines() {
             manufacturer: 'SemiconTech',
             model: 'BMD302W',
             department: 'Wafer Prep',
-            ratedLife: 25000,
-            warningLife: 20000,
-            baseLaserHour: 12500,
-            baseTimestamp: dateOffset(30),
-            lastRecalibrationDate: dateOffset(30),
+            lasers: [
+                {
+                    id: 'WD-101-L1',
+                    name: 'Laser Head 1',
+                    serialNo: 'BMD3-9021-L1',
+                    ratedLife: 25000,
+                    warningLife: 20000,
+                    baseLaserHour: 12500,
+                    baseTimestamp: dateOffset(30),
+                    lastRecalibrationDate: dateOffset(30),
+                    calibrationHistory: [
+                        { date: dateOffset(30), estimatedHour: 12490, actualHour: 12500, difference: 10, reason: 'Scheduled PM', rating: '★★★★★ Excellent' }
+                    ]
+                },
+                {
+                    id: 'WD-101-L2',
+                    name: 'Laser Head 2',
+                    serialNo: 'BMD3-9021-L2',
+                    ratedLife: 25000,
+                    warningLife: 20000,
+                    baseLaserHour: 20500,
+                    baseTimestamp: dateOffset(30),
+                    lastRecalibrationDate: dateOffset(30),
+                    calibrationHistory: []
+                }
+            ],
             maintenanceHistory: [
                 { date: dateOffset(120).split('T')[0], engineer: 'J. Smith', action: 'Lens Clean', notes: 'Routine check' },
                 { date: dateOffset(60).split('T')[0], engineer: 'M. Doe', action: 'Filter Replace', notes: 'Dust accumulation high' }
-            ],
-            calibrationHistory: [
-                { date: dateOffset(30), estimatedHour: 12490, actualHour: 12500, difference: 10, reason: 'Scheduled PM', rating: '★★★★★ Excellent' }
             ],
             lastUpdated: new Date().toISOString()
         },
@@ -38,16 +56,45 @@ function getFallbackMachines() {
             manufacturer: 'SemiconTech',
             model: 'BMD250WM',
             department: 'Packaging',
-            ratedLife: 25000,
-            warningLife: 20000,
-            baseLaserHour: 19800,
-            baseTimestamp: dateOffset(45),
-            lastRecalibrationDate: dateOffset(45),
+            lasers: [
+                {
+                    id: 'WD-102-L1',
+                    name: 'Laser Head 1',
+                    serialNo: 'BMD2-40401-L1',
+                    ratedLife: 25000,
+                    warningLife: 20000,
+                    baseLaserHour: 19800,
+                    baseTimestamp: dateOffset(45),
+                    lastRecalibrationDate: dateOffset(45),
+                    calibrationHistory: [
+                        { date: dateOffset(45), estimatedHour: 19780, actualHour: 19800, difference: 20, reason: 'Manual Verification', rating: '★★★★☆ Very Good' }
+                    ]
+                },
+                {
+                    id: 'WD-102-L2',
+                    name: 'Laser Head 2',
+                    serialNo: 'BMD2-40401-L2',
+                    ratedLife: 25000,
+                    warningLife: 20000,
+                    baseLaserHour: 14200,
+                    baseTimestamp: dateOffset(45),
+                    lastRecalibrationDate: dateOffset(45),
+                    calibrationHistory: []
+                },
+                {
+                    id: 'WD-102-L3',
+                    name: 'Laser Head 3',
+                    serialNo: 'BMD2-40401-L3',
+                    ratedLife: 25000,
+                    warningLife: 20000,
+                    baseLaserHour: 8900,
+                    baseTimestamp: dateOffset(45),
+                    lastRecalibrationDate: dateOffset(45),
+                    calibrationHistory: []
+                }
+            ],
             maintenanceHistory: [
                 { date: dateOffset(70).split('T')[0], engineer: 'T. Stark', action: 'Calibration', notes: 'Beam alignment drift corrected' }
-            ],
-            calibrationHistory: [
-                { date: dateOffset(45), estimatedHour: 19780, actualHour: 19800, difference: 20, reason: 'Manual Verification', rating: '★★★★☆ Very Good' }
             ],
             lastUpdated: new Date().toISOString()
         },
@@ -59,16 +106,34 @@ function getFallbackMachines() {
             manufacturer: 'SemiconTech',
             model: 'BMD302W',
             department: 'R&D',
-            ratedLife: 25000,
-            warningLife: 20000,
-            baseLaserHour: 24500,
-            baseTimestamp: dateOffset(95),
-            lastRecalibrationDate: dateOffset(95),
+            lasers: [
+                {
+                    id: 'WD-201-L1',
+                    name: 'Laser Head 1',
+                    serialNo: 'BMD3-8832-L1',
+                    ratedLife: 25000,
+                    warningLife: 20000,
+                    baseLaserHour: 24500,
+                    baseTimestamp: dateOffset(95),
+                    lastRecalibrationDate: dateOffset(95),
+                    calibrationHistory: [
+                        { date: dateOffset(95), estimatedHour: 24450, actualHour: 24500, difference: 50, reason: 'Breakdown', rating: '★★★☆☆ Good' }
+                    ]
+                },
+                {
+                    id: 'WD-201-L2',
+                    name: 'Laser Head 2',
+                    serialNo: 'BMD3-8832-L2',
+                    ratedLife: 25000,
+                    warningLife: 20000,
+                    baseLaserHour: 18100,
+                    baseTimestamp: dateOffset(95),
+                    lastRecalibrationDate: dateOffset(95),
+                    calibrationHistory: []
+                }
+            ],
             maintenanceHistory: [
                 { date: dateOffset(200).split('T')[0], engineer: 'B. Banner', action: 'Diode Module 1 Replace', notes: 'Power drop detected' }
-            ],
-            calibrationHistory: [
-                { date: dateOffset(95), estimatedHour: 24450, actualHour: 24500, difference: 50, reason: 'Breakdown', rating: '★★★☆☆ Good' }
             ],
             lastUpdated: new Date().toISOString()
         },
@@ -80,13 +145,53 @@ function getFallbackMachines() {
             manufacturer: 'SemiconTech',
             model: 'BMD250WM',
             department: 'Wafer Prep',
-            ratedLife: 20000,
-            warningLife: 15000,
-            baseLaserHour: 2500,
-            baseTimestamp: dateOffset(10),
-            lastRecalibrationDate: dateOffset(10),
+            lasers: [
+                {
+                    id: 'WD-305-L1',
+                    name: 'Laser Head 1',
+                    serialNo: 'BMD2-771-L1',
+                    ratedLife: 20000,
+                    warningLife: 15000,
+                    baseLaserHour: 2500,
+                    baseTimestamp: dateOffset(10),
+                    lastRecalibrationDate: dateOffset(10),
+                    calibrationHistory: []
+                },
+                {
+                    id: 'WD-305-L2',
+                    name: 'Laser Head 2',
+                    serialNo: 'BMD2-771-L2',
+                    ratedLife: 20000,
+                    warningLife: 15000,
+                    baseLaserHour: 3100,
+                    baseTimestamp: dateOffset(10),
+                    lastRecalibrationDate: dateOffset(10),
+                    calibrationHistory: []
+                },
+                {
+                    id: 'WD-305-L3',
+                    name: 'Laser Head 3',
+                    serialNo: 'BMD2-771-L3',
+                    ratedLife: 20000,
+                    warningLife: 15000,
+                    baseLaserHour: 1800,
+                    baseTimestamp: dateOffset(10),
+                    lastRecalibrationDate: dateOffset(10),
+                    calibrationHistory: []
+                },
+                {
+                    id: 'WD-305-L4',
+                    name: 'Laser Head 4',
+                    serialNo: 'BMD2-771-L4',
+                    ratedLife: 20000,
+                    warningLife: 15000,
+                    baseLaserHour: 2900,
+                    baseTimestamp: dateOffset(10),
+                    lastRecalibrationDate: dateOffset(10),
+                    calibrationHistory: []
+                }
+            ],
             maintenanceHistory: [],
-            calibrationHistory: [],
             lastUpdated: new Date().toISOString()
         }
     ];
@@ -96,29 +201,67 @@ export const StorageService = {
     normalizeMachines(list) {
         if (!Array.isArray(list)) return getFallbackMachines();
         return list.map(m => {
-            const rated = Number(m.ratedLife) || 25000;
-            const warn = Number(m.warningLife) || Math.floor(rated * 0.8);
-            const baseHour = typeof m.baseLaserHour === 'number' ? m.baseLaserHour : (Number(m.prevHour) || 0);
-            let baseTs = m.baseTimestamp;
-            if (!baseTs) {
-                baseTs = m.prevDate ? new Date(m.prevDate).toISOString() : new Date().toISOString();
+            const id = m.id || 'WD-' + Math.floor(Math.random() * 100000);
+            const machineNo = m.machineNo || 'WD-000';
+            const machineName = m.machineName || ('Wafer Driller ' + (m.model || 'BMD302W'));
+            const serialNo = m.serialNo || 'SN-0000';
+            const manufacturer = m.manufacturer || 'SemiconTech';
+            const model = m.model || 'BMD302W';
+            const department = m.department || 'Wafer Prep';
+
+            // Multi-laser normalization: ensure lasers array exists and has valid objects
+            let lasers = Array.isArray(m.lasers) && m.lasers.length > 0 ? m.lasers : null;
+
+            if (!lasers) {
+                // Migrate single laser machine object into multi-laser structure
+                const rated = Number(m.ratedLife) || 25000;
+                const warn = Number(m.warningLife) || Math.floor(rated * 0.8);
+                const baseHour = typeof m.baseLaserHour === 'number' ? m.baseLaserHour : (Number(m.prevHour) || 0);
+                let baseTs = m.baseTimestamp || (m.prevDate ? new Date(m.prevDate).toISOString() : new Date().toISOString());
+
+                lasers = [{
+                    id: `${id}-L1`,
+                    name: 'Laser Head 1',
+                    serialNo: m.laserSerialNo || (serialNo ? `${serialNo}-L1` : 'LS-101'),
+                    ratedLife: rated,
+                    warningLife: warn,
+                    baseLaserHour: baseHour,
+                    baseTimestamp: baseTs,
+                    lastRecalibrationDate: m.lastRecalibrationDate || baseTs,
+                    calibrationHistory: Array.isArray(m.calibrationHistory) ? m.calibrationHistory : []
+                }];
+            } else {
+                // Ensure every laser in array is fully valid
+                lasers = lasers.map((laser, idx) => {
+                    const lRated = Number(laser.ratedLife) || 25000;
+                    const lWarn = Number(laser.warningLife) || Math.floor(lRated * 0.8);
+                    const lBase = typeof laser.baseLaserHour === 'number' ? laser.baseLaserHour : 0;
+                    const lTs = laser.baseTimestamp || new Date().toISOString();
+
+                    return {
+                        id: laser.id || `${id}-L${idx + 1}`,
+                        name: laser.name || `Laser Head ${idx + 1}`,
+                        serialNo: laser.serialNo || `${serialNo}-L${idx + 1}`,
+                        ratedLife: lRated,
+                        warningLife: lWarn,
+                        baseLaserHour: lBase,
+                        baseTimestamp: lTs,
+                        lastRecalibrationDate: laser.lastRecalibrationDate || lTs,
+                        calibrationHistory: Array.isArray(laser.calibrationHistory) ? laser.calibrationHistory : []
+                    };
+                });
             }
 
             return {
-                id: m.id || 'WD-' + Math.floor(Math.random() * 100000),
-                machineNo: m.machineNo || 'WD-000',
-                machineName: m.machineName || ('Wafer Driller ' + (m.model || 'BMD302W')),
-                serialNo: m.serialNo || 'SN-0000',
-                manufacturer: m.manufacturer || 'SemiconTech',
-                model: m.model || 'BMD302W',
-                department: m.department || 'Wafer Prep',
-                ratedLife: rated,
-                warningLife: warn,
-                baseLaserHour: baseHour,
-                baseTimestamp: baseTs,
-                lastRecalibrationDate: m.lastRecalibrationDate || baseTs,
+                id,
+                machineNo,
+                machineName,
+                serialNo,
+                manufacturer,
+                model,
+                department,
+                lasers,
                 maintenanceHistory: Array.isArray(m.maintenanceHistory) ? m.maintenanceHistory : [],
-                calibrationHistory: Array.isArray(m.calibrationHistory) ? m.calibrationHistory : [],
                 lastUpdated: m.lastUpdated || new Date().toISOString()
             };
         });
