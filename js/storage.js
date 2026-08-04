@@ -394,6 +394,46 @@ export const StorageService = {
         } catch (err) {
             console.error('[StorageService] Error saving settings:', err);
         }
+    },
+
+    exportBackup() {
+        const machines = this.loadMachines();
+        const settings = this.loadSettings();
+        return {
+            version: '1.0',
+            exportedAt: new Date().toISOString(),
+            machines: JSON.parse(JSON.stringify(machines)),
+            settings: JSON.parse(JSON.stringify(settings))
+        };
+    },
+
+    importBackup(data) {
+        if (!data) throw new Error('Invalid backup data');
+        let machines = [];
+        let settings = null;
+
+        if (Array.isArray(data)) {
+            machines = data;
+        } else if (typeof data === 'object' && data !== null) {
+            machines = Array.isArray(data.machines) ? data.machines : [];
+            if (data.settings && typeof data.settings === 'object') {
+                settings = data.settings;
+            }
+        } else {
+            throw new Error('Unsupported backup format');
+        }
+
+        const normalizedMachines = this.normalizeMachines(machines);
+        this.saveMachines(normalizedMachines);
+
+        if (settings) {
+            this.saveSettings(settings);
+        }
+
+        return {
+            machines: normalizedMachines,
+            settings: this.loadSettings()
+        };
     }
 };
 
