@@ -282,9 +282,9 @@ export const StorageService = {
     async loadMachinesAsync() {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            if (raw) {
+            if (raw !== null) {
                 const parsed = JSON.parse(raw);
-                if (Array.isArray(parsed) && parsed.length > 0) {
+                if (Array.isArray(parsed)) {
                     return this.normalizeMachines(parsed);
                 }
             }
@@ -309,13 +309,13 @@ export const StorageService = {
     loadMachines() {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) {
+            if (raw === null) {
                 const initial = getFallbackMachines();
                 this.saveMachines(initial);
                 return initial;
             }
             const parsed = JSON.parse(raw);
-            if (!Array.isArray(parsed) || parsed.length === 0) {
+            if (!Array.isArray(parsed)) {
                 const initial = getFallbackMachines();
                 this.saveMachines(initial);
                 return initial;
