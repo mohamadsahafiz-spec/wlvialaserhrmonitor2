@@ -171,7 +171,11 @@ function initDOM() {
         btnSubmitModeAuth: document.getElementById('btn-submit-mode-auth'),
         btnCancelModeModal: document.getElementById('btn-cancel-mode-modal'),
         btnCloseModeModal: document.getElementById('btn-close-mode-modal'),
-        modePasswordError: document.getElementById('mode-password-error')
+        modePasswordError: document.getElementById('mode-password-error'),
+
+        // Settings & Fleet Backup Controls
+        btnExportJson: document.getElementById('btn-export-json'),
+        inputImportJson: document.getElementById('input-import-json')
     };
 }
 
@@ -1058,6 +1062,69 @@ function setupEventListeners() {
         UI.exportToCSV(AppState.machines, getEvalTime(), AppState.simulatedDate);
         UI.showToast('CSV Report Downloaded', 'success');
     });
+
+    // Fleet Backup Export & Import (.json)
+    if (DOM.btnExportJson) {
+        DOM.btnExportJson.addEventListener('click', () => {
+            try {
+                const backupData = StorageService.exportBackup();
+                const jsonString = JSON.stringify(backupData, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const filename = `LMS_Fleet_Backup_${year}-${month}-${day}_${hours}${minutes}.json`;
+
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                UI.showToast('Fleet Backup Exported', 'success');
+            } catch (err) {
+                console.error('[ExportBackup] Error exporting backup:', err);
+                UI.showToast('Failed to export fleet backup', 'error');
+            }
+        });
+    }
+
+    if (DOM.inputImportJson) {
+        DOM.inputImportJson.addEventListener('change', (e) => {
+            const file = e.target.files && e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const parsed = JSON.parse(event.target.result);
+                    const restored = StorageService.importBackup(parsed);
+                    AppState.machines = restored.machines;
+                    AppState.settings = restored.settings;
+
+                    UI.applyTheme(AppState.settings.theme);
+                    updateModeBadgeUI();
+                    UI.showToast('Fleet Backup Restored Successfully ✓', 'success');
+
+                    if (DOM.fleetGrid) {
+                        DashboardController.renderFleetView(DOM.fleetGrid, AppState.machines, AppState.filters, getEvalTime(), handleMachineSelect, handleEditMachine, handleDeleteMachine);
+                    }
+                } catch (err) {
+                    console.error('[ImportBackup] Error importing backup:', err);
+                    UI.showToast('Failed to import backup JSON file', 'error');
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        });
+    }
 
     // Add Machine Modal
     const openAddModal = () => {
