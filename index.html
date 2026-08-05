@@ -525,6 +525,10 @@
                             </div>
 
                             <div class="machine-info-grid" style="margin-top:20px;">
+                                <div class="form-group" style="grid-column: 1 / -1;">
+                                    <label>Machine Name</label>
+                                    <input type="text" id="det-mach-name" class="input-control" placeholder="e.g. Wafer Driller BMD302W">
+                                </div>
                                 <div class="form-group">
                                     <label>Machine No</label>
                                     <input type="text" id="det-mach-no" class="input-control" value="WD-101">
@@ -632,10 +636,6 @@
             <div class="modal-body">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label>Machine No</label>
-                        <input type="text" id="new-mach-no" class="input-control" placeholder="e.g. WD-104">
-                    </div>
-                    <div class="form-group">
                         <label>Model</label>
                         <select id="new-mach-model" class="input-control">
                             <option value="BMD302W">BMD302W</option>
@@ -655,12 +655,13 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Rated Life Limit (hrs)</label>
-                        <input type="number" id="new-mach-rated" class="input-control" value="25000">
-                    </div>
-                    <div class="form-group">
-                        <label>Initial Laser Hour (hrs)</label>
-                        <input type="number" id="new-mach-current" class="input-control" value="0">
+                        <label>Laser Heads</label>
+                        <select id="new-mach-laser-count" class="input-control">
+                            <option value="1" selected>1 Head</option>
+                            <option value="2">2 Heads</option>
+                            <option value="3">3 Heads</option>
+                            <option value="4">4 Heads</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -683,6 +684,10 @@
             <div class="modal-body">
                 <input type="hidden" id="edit-mach-id">
                 <div class="form-grid" style="grid-template-columns:1fr;">
+                    <div class="form-group">
+                        <label>Machine Name</label>
+                        <input type="text" id="edit-mach-name" class="input-control" placeholder="e.g. Wafer Driller BMD302W">
+                    </div>
                     <div class="form-group">
                         <label>Machine No</label>
                         <input type="text" id="edit-mach-no" class="input-control">
@@ -711,6 +716,50 @@
             <div class="modal-footer">
                 <button id="btn-cancel-edit-modal" class="btn btn-secondary">Cancel</button>
                 <button id="btn-submit-edit-machine" class="btn btn-primary">Save Machine</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================
+         MODAL: IDENTITY MISMATCH WARNING
+    ===================================================== -->
+    <div id="identity-mismatch-modal-overlay" class="modal-overlay">
+        <div class="modal-content glass-panel" style="max-width:480px;">
+            <div class="modal-header">
+                <h3>Identity Mismatch Warning</h3>
+                <button id="btn-close-identity-modal" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="recommendation-banner" style="background:rgba(251,191,36,0.15); border-color:var(--yellow); color:var(--yellow); margin-bottom:16px;">
+                    <strong>Warning:</strong> Entered machine identity differs from registered parent machine identity.
+                </div>
+                <div style="background:var(--input-bg); border:1px solid var(--panel-border); border-radius:8px; padding:14px; font-size:13px; line-height:1.6; margin-bottom:16px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div>
+                            <span style="color:var(--muted); font-size:11px; text-transform:uppercase; display:block;">Registered Model</span>
+                            <strong id="mismatch-reg-model" style="color:var(--text);">--</strong>
+                        </div>
+                        <div>
+                            <span style="color:var(--muted); font-size:11px; text-transform:uppercase; display:block;">Entered Model</span>
+                            <strong id="mismatch-ent-model" style="color:var(--primary);">--</strong>
+                        </div>
+                        <div>
+                            <span style="color:var(--muted); font-size:11px; text-transform:uppercase; display:block;">Registered Serial</span>
+                            <strong id="mismatch-reg-serial" style="color:var(--text);">--</strong>
+                        </div>
+                        <div>
+                            <span style="color:var(--muted); font-size:11px; text-transform:uppercase; display:block;">Entered Serial</span>
+                            <strong id="mismatch-ent-serial" style="color:var(--primary);">--</strong>
+                        </div>
+                    </div>
+                </div>
+                <p style="font-size:13px; color:var(--muted); margin:0;">
+                    Would you like to use the registered identity or explicitly confirm identity change?
+                </p>
+            </div>
+            <div class="modal-footer" style="gap:10px;">
+                <button id="btn-use-registered-identity" class="btn btn-secondary">Use Registered Data</button>
+                <button id="btn-confirm-identity-change" class="btn btn-primary">Confirm Identity Change</button>
             </div>
         </div>
     </div>
