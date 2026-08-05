@@ -88,10 +88,12 @@ export const MachineController = {
         }
 
         // Populate Configuration Tab fields
+        const detName = document.getElementById('det-mach-name');
         const detNum = document.getElementById('det-mach-no');
         const detModel = document.getElementById('det-model');
         const detSerial = document.getElementById('det-serial-no');
         const detDept = document.getElementById('det-dept');
+        if (detName) detName.value = machine.machineName || ('Wafer Driller ' + (machine.model || 'BMD302W'));
         if (detNum) detNum.value = machine.machineNo || '';
         if (detModel) detModel.value = machine.model || 'BMD302W';
         if (detSerial) detSerial.value = machine.serialNo || '';
