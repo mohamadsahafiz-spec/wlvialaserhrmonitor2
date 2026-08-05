@@ -143,12 +143,10 @@ function initDOM() {
         btnCloseAddModal: document.getElementById('btn-close-modal'),
         btnCancelAddModal: document.getElementById('btn-cancel-modal'),
         btnSubmitMachine: document.getElementById('btn-submit-machine'),
-        newMachNo: document.getElementById('new-mach-no'),
         newMachModel: document.getElementById('new-mach-model'),
         newMachSerial: document.getElementById('new-mach-serial'),
         newMachDept: document.getElementById('new-mach-dept'),
-        newMachRated: document.getElementById('new-mach-rated'),
-        newMachCurrent: document.getElementById('new-mach-current'),
+        newMachLaserCount: document.getElementById('new-mach-laser-count'),
 
         // Edit Machine Modal
         editModalOverlay: document.getElementById('edit-modal-overlay'),
@@ -156,12 +154,30 @@ function initDOM() {
         btnCancelEditModal: document.getElementById('btn-cancel-edit-modal'),
         btnSubmitEditMachine: document.getElementById('btn-submit-edit-machine'),
         editMachId: document.getElementById('edit-mach-id'),
+        editMachName: document.getElementById('edit-mach-name'),
         editMachNo: document.getElementById('edit-mach-no'),
         editMachModel: document.getElementById('edit-mach-model'),
         editMachSerial: document.getElementById('edit-mach-serial'),
         editMachDept: document.getElementById('edit-mach-dept'),
         editMachRated: document.getElementById('edit-mach-rated'),
         editMachBaseHour: document.getElementById('edit-mach-base-hour'),
+
+        // Configuration Tab Fields
+        detMachName: document.getElementById('det-mach-name'),
+        detMachNo: document.getElementById('det-mach-no'),
+        detModel: document.getElementById('det-model'),
+        detSerialNo: document.getElementById('det-serial-no'),
+        detDept: document.getElementById('det-dept'),
+
+        // Identity Mismatch Modal
+        identityOverlay: document.getElementById('identity-mismatch-modal-overlay'),
+        btnCloseIdentityModal: document.getElementById('btn-close-identity-modal'),
+        btnUseRegisteredIdentity: document.getElementById('btn-use-registered-identity'),
+        btnConfirmIdentityChange: document.getElementById('btn-confirm-identity-change'),
+        mismatchRegModel: document.getElementById('mismatch-reg-model'),
+        mismatchEntModel: document.getElementById('mismatch-ent-model'),
+        mismatchRegSerial: document.getElementById('mismatch-reg-serial'),
+        mismatchEntSerial: document.getElementById('mismatch-ent-serial'),
 
         // Mode Authentication Modal & Controls
         btnToggleMode: document.getElementById('btn-toggle-mode'),
@@ -314,18 +330,48 @@ function handleMachineSelect(id, cardElement) {
     }
 }
 
+let pendingIdentityState = null;
+
+function checkAndHandleIdentityChange(machine, enteredModel, enteredSerial, enteredName, enteredDept, saveCallback) {
+    const isModelChanged = Boolean(enteredModel && enteredModel !== machine.model);
+    const isSerialChanged = Boolean(enteredSerial && enteredSerial !== machine.serialNo);
+
+    if (isModelChanged || isSerialChanged) {
+        pendingIdentityState = {
+            machine,
+            enteredModel,
+            enteredSerial,
+            enteredName,
+            enteredDept,
+            saveCallback
+        };
+
+        if (DOM.mismatchRegModel) DOM.mismatchRegModel.textContent = machine.model || 'N/A';
+        if (DOM.mismatchEntModel) DOM.mismatchEntModel.textContent = enteredModel || 'N/A';
+        if (DOM.mismatchRegSerial) DOM.mismatchRegSerial.textContent = machine.serialNo || 'N/A';
+        if (DOM.mismatchEntSerial) DOM.mismatchEntSerial.textContent = enteredSerial || 'N/A';
+
+        UI.showModal(DOM.identityOverlay);
+        return true;
+    }
+
+    if (enteredName) machine.machineName = enteredName;
+    if (enteredDept) machine.department = enteredDept;
+    saveCallback(false);
+    return false;
+}
+
 function handleEditMachine(id) {
     requireEngineerMode(() => {
         const machine = AppState.machines.find(m => m.id === id);
         if (!machine) return;
 
         if (DOM.editMachId) DOM.editMachId.value = machine.id;
+        if (DOM.editMachName) DOM.editMachName.value = machine.machineName || (`Wafer Driller ${machine.model || 'BMD302W'}`);
         if (DOM.editMachNo) DOM.editMachNo.value = machine.machineNo || '';
         if (DOM.editMachModel) DOM.editMachModel.value = machine.model || 'BMD302W';
         if (DOM.editMachSerial) DOM.editMachSerial.value = machine.serialNo || '';
         if (DOM.editMachDept) DOM.editMachDept.value = machine.department || 'Wafer Prep';
-        if (DOM.editMachRated) DOM.editMachRated.value = machine.ratedLife || 25000;
-        if (DOM.editMachBaseHour) DOM.editMachBaseHour.value = machine.baseLaserHour || 0;
 
         UI.showModal(DOM.editModalOverlay);
     });
@@ -931,31 +977,26 @@ function setupEventListeners() {
     if (DOM.btnSaveMachine) DOM.btnSaveMachine.addEventListener('click', () => {
         requireEngineerMode(() => {
             const machine = AppState.machines.find(m => m.id === AppState.currentMachineId);
-            if (machine) {
-                if (DOM.detMachNo) machine.machineNo = DOM.detMachNo.value.trim() || machine.machineNo;
-                if (DOM.detModel) {
-                    machine.model = DOM.detModel.value;
-                    machine.machineName = `Wafer Driller ${DOM.detModel.value}`;
-                }
-                if (DOM.detSerialNo) machine.serialNo = DOM.detSerialNo.value.trim() || machine.serialNo;
-                if (DOM.detDept) machine.department = DOM.detDept.value;
-                if (DOM.detRated) {
-                    machine.ratedLife = Number(DOM.detRated.value) || 25000;
-                    machine.warningLife = Math.floor(machine.ratedLife * 0.8);
-                }
-                if (DOM.prevHour) machine.baseLaserHour = Number(DOM.prevHour.value) || 0;
-                if (DOM.prevDate && DOM.prevDate.value) {
-                    machine.baseTimestamp = safeToISOString(DOM.prevDate.value);
-                }
+            if (!machine) return;
 
+            const entName = DOM.detMachName ? DOM.detMachName.value.trim() : '';
+            const entNo = DOM.detMachNo ? DOM.detMachNo.value.trim() : machine.machineNo;
+            const entModel = DOM.detModel ? DOM.detModel.value : machine.model;
+            const entSerial = DOM.detSerialNo ? DOM.detSerialNo.value.trim() : machine.serialNo;
+            const entDept = DOM.detDept ? DOM.detDept.value : machine.department;
+
+            if (entNo) machine.machineNo = entNo;
+
+            checkAndHandleIdentityChange(machine, entModel, entSerial, entName, entDept, (isConfirmedIdentityChange) => {
                 StorageService.saveMachine(machine);
-                MachineController.updateLegendsAndScales(machine, DOM);
-                UI.showToast(`Saved machine ${machine.machineNo} ✓`, 'success');
+                AppState.machines = StorageService.loadMachines();
+                MachineController.renderSingleDashboard(machine, DOM, getEvalTime(), false, getMachineCallbacks());
+                UI.showToast(isConfirmedIdentityChange ? `Updated Identity for ${machine.machineNo} ✓` : `Saved configuration for ${machine.machineNo} ✓`, 'success');
 
                 const origTxt = DOM.btnSaveMachine.textContent;
                 DOM.btnSaveMachine.textContent = "Saved ✓";
                 setTimeout(() => DOM.btnSaveMachine.textContent = origTxt, 1200);
-            }
+            });
         });
     });
 
@@ -1126,13 +1167,60 @@ function setupEventListeners() {
         });
     }
 
+    // Identity Mismatch Modal Handlers
+    const closeIdentityModal = () => {
+        UI.hideModal(DOM.identityOverlay);
+        pendingIdentityState = null;
+    };
+    if (DOM.btnCloseIdentityModal) DOM.btnCloseIdentityModal.addEventListener('click', closeIdentityModal);
+
+    if (DOM.btnUseRegisteredIdentity) {
+        DOM.btnUseRegisteredIdentity.addEventListener('click', () => {
+            if (!pendingIdentityState) return;
+            const { machine, enteredName, enteredDept, saveCallback } = pendingIdentityState;
+
+            if (DOM.detModel) DOM.detModel.value = machine.model || 'BMD302W';
+            if (DOM.detSerialNo) DOM.detSerialNo.value = machine.serialNo || '';
+            if (DOM.editMachModel) DOM.editMachModel.value = machine.model || 'BMD302W';
+            if (DOM.editMachSerial) DOM.editMachSerial.value = machine.serialNo || '';
+
+            if (enteredName) machine.machineName = enteredName;
+            if (enteredDept) machine.department = enteredDept;
+
+            closeIdentityModal();
+            saveCallback(false);
+        });
+    }
+
+    if (DOM.btnConfirmIdentityChange) {
+        DOM.btnConfirmIdentityChange.addEventListener('click', () => {
+            if (!pendingIdentityState) return;
+            const { machine, enteredModel, enteredSerial, enteredName, enteredDept, saveCallback } = pendingIdentityState;
+
+            const oldSerial = machine.serialNo;
+            if (enteredModel) machine.model = enteredModel;
+            if (enteredSerial) machine.serialNo = enteredSerial;
+            if (enteredName) machine.machineName = enteredName;
+            if (enteredDept) machine.department = enteredDept;
+
+            if (Array.isArray(machine.lasers)) {
+                machine.lasers.forEach((laser, idx) => {
+                    if (!laser.serialNo || (oldSerial && laser.serialNo.includes(oldSerial))) {
+                        laser.serialNo = `${machine.serialNo}-L${idx + 1}`;
+                    }
+                });
+            }
+
+            closeIdentityModal();
+            saveCallback(true);
+        });
+    }
+
     // Add Machine Modal
     const openAddModal = () => {
         requireEngineerMode(() => {
-            if (DOM.newMachNo) DOM.newMachNo.value = '';
             if (DOM.newMachSerial) DOM.newMachSerial.value = '';
-            if (DOM.newMachRated) DOM.newMachRated.value = '25000';
-            if (DOM.newMachCurrent) DOM.newMachCurrent.value = '0';
+            if (DOM.newMachLaserCount) DOM.newMachLaserCount.value = '1';
             UI.showModal(DOM.addModalOverlay);
         });
     };
@@ -1143,26 +1231,39 @@ function setupEventListeners() {
     if (DOM.btnCancelAddModal) DOM.btnCancelAddModal.addEventListener('click', closeAddModal);
 
     if (DOM.btnSubmitMachine) DOM.btnSubmitMachine.addEventListener('click', () => {
-        const no = (DOM.newMachNo ? DOM.newMachNo.value.trim() : '') || 'NEW-000';
         const model = DOM.newMachModel ? DOM.newMachModel.value : 'BMD302W';
         const serial = (DOM.newMachSerial ? DOM.newMachSerial.value.trim() : '') || 'SN-XXXX';
         const dept = DOM.newMachDept ? DOM.newMachDept.value : 'Wafer Prep';
-        const rated = Number(DOM.newMachRated ? DOM.newMachRated.value : 25000) || 25000;
-        const current = Number(DOM.newMachCurrent ? DOM.newMachCurrent.value : 0) || 0;
-        const nowISO = getEvalTime().toISOString();
+        const headCount = Number(DOM.newMachLaserCount ? DOM.newMachLaserCount.value : 1) || 1;
+
+        const machId = 'WD-' + Math.floor(10000 + Math.random() * 90000);
+        const machineNo = `WD-${serial.replace(/[^a-zA-Z0-9]/g, '').slice(-4) || Math.floor(100 + Math.random() * 900)}`;
+
+        const lasers = [];
+        for (let i = 1; i <= headCount; i++) {
+            lasers.push({
+                id: `${machId}-L${i}`,
+                name: `Laser Head ${i}`,
+                serialNo: `${serial}-L${i}`,
+                ratedLife: 25000,
+                warningLife: 20000,
+                contingencyCeiling: 28000,
+                baseLaserHour: null,
+                baseTimestamp: null,
+                runtimeState: 'BASELINE_REQUIRED',
+                lastRecalibrationDate: null,
+                calibrationHistory: []
+            });
+        }
 
         const newMachine = {
-            id: 'WD-' + Math.floor(Math.random() * 100000),
-            machineNo: no,
+            id: machId,
+            machineNo: machineNo,
             machineName: `Wafer Driller ${model}`,
             model: model,
             serialNo: serial,
             department: dept,
-            ratedLife: rated,
-            warningLife: Math.floor(rated * 0.8),
-            baseLaserHour: current,
-            baseTimestamp: nowISO,
-            lastRecalibrationDate: nowISO,
+            lasers: lasers,
             maintenanceHistory: [],
             calibrationHistory: []
         };
@@ -1170,7 +1271,7 @@ function setupEventListeners() {
         StorageService.saveMachine(newMachine);
         AppState.machines = StorageService.loadMachines();
         closeAddModal();
-        UI.showToast(`Created machine ${no}`, 'success');
+        UI.showToast(`Created ${newMachine.machineName} (${serial}) ✓`, 'success');
 
         if (DOM.fleetGrid) {
             DashboardController.renderFleetView(DOM.fleetGrid, AppState.machines, AppState.filters, getEvalTime(), handleMachineSelect, handleEditMachine, handleDeleteMachine);
@@ -1189,29 +1290,27 @@ function setupEventListeners() {
         const machine = AppState.machines.find(m => m.id === id);
         if (!machine) return;
 
-        if (DOM.editMachNo) machine.machineNo = DOM.editMachNo.value.trim() || machine.machineNo;
-        if (DOM.editMachModel) {
-            machine.model = DOM.editMachModel.value;
-            machine.machineName = `Wafer Driller ${DOM.editMachModel.value}`;
-        }
-        if (DOM.editMachSerial) machine.serialNo = DOM.editMachSerial.value.trim() || machine.serialNo;
-        if (DOM.editMachDept) machine.department = DOM.editMachDept.value;
-        if (DOM.editMachRated) {
-            machine.ratedLife = Number(DOM.editMachRated.value) || 25000;
-            machine.warningLife = Math.floor(machine.ratedLife * 0.8);
-        }
-        if (DOM.editMachBaseHour) {
-            machine.baseLaserHour = Number(DOM.editMachBaseHour.value) || 0;
-        }
+        const entName = DOM.editMachName ? DOM.editMachName.value.trim() : '';
+        const entNo = DOM.editMachNo ? DOM.editMachNo.value.trim() : machine.machineNo;
+        const entModel = DOM.editMachModel ? DOM.editMachModel.value : machine.model;
+        const entSerial = DOM.editMachSerial ? DOM.editMachSerial.value.trim() : machine.serialNo;
+        const entDept = DOM.editMachDept ? DOM.editMachDept.value : machine.department;
 
-        StorageService.saveMachine(machine);
-        AppState.machines = StorageService.loadMachines();
-        closeEditModal();
-        UI.showToast(`Updated machine ${machine.machineNo}`, 'success');
+        if (entNo) machine.machineNo = entNo;
 
-        if (DOM.fleetGrid) {
-            DashboardController.renderFleetView(DOM.fleetGrid, AppState.machines, AppState.filters, getEvalTime(), handleMachineSelect, handleEditMachine, handleDeleteMachine);
-        }
+        checkAndHandleIdentityChange(machine, entModel, entSerial, entName, entDept, (isConfirmedIdentityChange) => {
+            StorageService.saveMachine(machine);
+            AppState.machines = StorageService.loadMachines();
+            closeEditModal();
+            UI.showToast(isConfirmedIdentityChange ? `Updated Identity for ${machine.machineNo} ✓` : `Saved ${machine.machineNo} ✓`, 'success');
+
+            if (DOM.fleetGrid) {
+                DashboardController.renderFleetView(DOM.fleetGrid, AppState.machines, AppState.filters, getEvalTime(), handleMachineSelect, handleEditMachine, handleDeleteMachine);
+            }
+            if (AppState.currentMachineId === machine.id) {
+                MachineController.renderSingleDashboard(machine, DOM, getEvalTime(), false, getMachineCallbacks());
+            }
+        });
     });
 
     // Keyboard Shortcuts
